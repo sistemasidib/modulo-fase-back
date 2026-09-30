@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Controle de Demanda — Fase 1: situação em 23/09/2026</title>
+<style>
+  @page { size: A4; margin: 15mm 18mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #222; font-size: 10pt; line-height: 1.45; margin: 0; }
+  h1 { font-size: 17pt; margin: 0 0 1mm; }
+  .sub { color: #666; margin-bottom: 7mm; }
+  h2 { font-size: 12.5pt; margin: 6mm 0 2.5mm; padding-bottom: 1mm; border-bottom: 1px solid #222; break-after: avoid; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  th, td { text-align: left; vertical-align: top; padding: 1.4mm 2mm; border-bottom: 1px solid #ddd; }
+  th { font-weight: 600; border-bottom: 1px solid #999; }
+  tr { break-inside: avoid; }
+  td:first-child { width: 32%; }
+  code { font-family: Consolas, monospace; font-size: 8.5pt; }
+  p { margin: 0 0 2.5mm; }
+  .obs { color: #666; font-size: 9pt; margin-top: 6mm; }
+</style>
+</head>
+<body>
+
+<h1>Controle de Demanda — Fase 1</h1>
+<div class="sub">Fases, etapas, grupos de cargos e publicações · modulo-fase · 23/09/2026</div>
+
+<h2>O que está implementado</h2>
+<table>
+  <thead><tr><th>Item</th><th>O que faz</th></tr></thead>
+  <tbody>
+    <tr><td>Cadastro de fases e etapas</td><td>Criar, listar, consultar, editar e excluir. A ordem da fase não se repete no edital; excluir algo em uso é recusado.</td></tr>
+    <tr><td>Grupos de cargos</td><td>Criar, renomear e excluir grupos. Agrupar cargos a qualquer momento, inclusive cargos novos. Um cargo fica em um grupo só.</td></tr>
+    <tr><td>Geração de fases e etapas</td><td>O usuário marca os tipos de etapa de cada fase e o sistema cria tudo de uma vez.</td></tr>
+    <tr><td>Tipos de etapa (14)</td><td>Prova objetiva, prova discursiva, TAF, THE, heteroidentificação, biopsicossocial e 8 análises de solicitações.</td></tr>
+    <tr><td>Espaços de publicação</td><td>Fase e etapa nascem com resultado preliminar e resultado oficial. A prova objetiva ganha também local de prova e gabaritos.</td></tr>
+    <tr><td>Datas manuais</td><td>Todas as datas são digitadas por quem publica. Sem cálculo automático D±N.</td></tr>
+    <tr><td>Publicar abre o recurso</td><td>Ao publicar, informa-se a visualização do documento e o início e o fim do recurso. O recurso fica aberto só nesse período.</td></tr>
+    <tr><td>IDECAN e IDIB</td><td>Tudo funciona nos dois bancos.</td></tr>
+    <tr><td>Editais existentes</td><td>Continuam como estão; nenhuma tabela existente foi alterada.</td></tr>
+    <tr><td>Script do banco</td><td><code>db/001-fases-e-etapas.sql</code>: 4 tabelas novas e os tipos.</td></tr>
+    <tr><td>Entidades no sys-core</td><td>13 entidades novas (IDECAN e IDIB).</td></tr>
+    <tr><td>Testes</td><td>57 testes automatizados passando.</td></tr>
+  </tbody>
+</table>
+
+<h2>O que falta implementar</h2>
+<table>
+  <thead><tr><th>Item</th><th>Motivo / o que precisa</th></tr></thead>
+  <tbody>
+    <tr><td>Solicitações: <code>etapa_id</code> → <code>fase_id</code></td><td>Só se houver a mudança.</td></tr>
+    <tr><td>Testes com banco real</td><td>Depende de criar as tabelas.</td></tr>
+    <tr><td>Criar as tabelas</td><td>Rodar o script no IDECAN_v2 e no IDIB_v2.</td></tr>
+    <tr><td>Publicar o sys-core e o modulo-fase</td><td>Commit e publicação, <b>depois</b> de criar as tabelas.</td></tr>
+    <tr><td>Validação em homologação</td><td>Testar nas duas instituições e registrar as evidências (Gustavo).</td></tr>
+  </tbody>
+</table>
+
+<p class="obs">Detalhes: <code>.speckit/specifications/001-fases-e-etapas.md</code> (§8) e <code>.speckit/tasks/001-fases-e-etapas.md</code>.</p>
+
+</body>
+</html>
