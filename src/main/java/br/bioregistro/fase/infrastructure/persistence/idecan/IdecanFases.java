@@ -3,7 +3,7 @@ package br.bioregistro.fase.infrastructure.persistence.idecan;
 import br.bioregistro.fase.infrastructure.persistence.RestricaoDoBanco;
 import br.com.bio.registro.core.runtime.entities.idecan.dbo.Edital;
 import br.com.bio.registro.core.runtime.entities.idecan.dbo.Fase;
-import br.com.bio.registro.core.runtime.entities.idecan.dbo.FaseGrupoCargo;
+import br.com.bio.registro.core.runtime.entities.idecan.dbo.FaseGrupoCargos;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.OffsetDateTime;
@@ -25,7 +25,7 @@ public class IdecanFases {
     }
 
     public List<br.bioregistro.fase.domain.model.Fase> listarPorGrupo(int grupoId) {
-        return FaseGrupoCargo.<FaseGrupoCargo>list("grupoCargo.id = ?1 order by fase.ordem", grupoId).stream()
+        return FaseGrupoCargos.<FaseGrupoCargos>list("grupoCargos.id = ?1 order by fase.ordem", grupoId).stream()
                 .map(vinculo -> paraDominio(vinculo.fase))
                 .toList();
     }

@@ -5,11 +5,11 @@
  * É idempotente: pode rodar de novo sem duplicar tabelas nem linhas.
  *
  * Tabelas existentes NÃO são alteradas (resposta 17: editais antigos ficam como estão).
- * A ligação fase → grupo fica em fase_grupo_cargo, e não numa coluna nova em dbo.fases.
+ * A ligação fase → grupo fica em fase_grupo_cargos, e não numa coluna nova em dbo.fases.
  *
  * Entidades correspondentes no sys-core (idecan e idib):
  *   faseDominio.DomTipoEtapa, DomTipoPublicacao, DomTipoEtapaPublicacao
- *   dbo.GrupoCargo, GrupoCargoCargo, FaseGrupoCargo, Publicacao
+ *   dbo.GrupoCargos, CargoGrupo, FaseGrupoCargos, Publicacao
  */
 
 SET XACT_ABORT ON;
@@ -108,40 +108,40 @@ WHERE te.valor IN (
 /* ------------------------------------------------------------------ */
 /* Grupos de cargos (RN02, respostas 9 e 10)                          */
 /* ------------------------------------------------------------------ */
-IF OBJECT_ID('dbo.grupo_cargo', 'U') IS NULL
+IF OBJECT_ID('dbo.grupo_cargos', 'U') IS NULL
 BEGIN
-    CREATE TABLE dbo.grupo_cargo (
-        id         INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_grupo_cargo PRIMARY KEY,
-        edital_id  INT               NOT NULL CONSTRAINT FK_grupo_cargo_edital REFERENCES dbo.Edital (ediId),
+    CREATE TABLE dbo.grupo_cargos (
+        id         INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_grupo_cargos PRIMARY KEY,
+        edital_id  INT               NOT NULL CONSTRAINT FK_grupo_cargos_edital REFERENCES dbo.Edital (ediId),
         nome       NVARCHAR(150)     NOT NULL,
         created_at DATETIMEOFFSET    NOT NULL,
         updated_at DATETIMEOFFSET    NOT NULL,
-        CONSTRAINT UQ_grupo_cargo_edital_nome UNIQUE (edital_id, nome)
+        CONSTRAINT UQ_grupo_cargos_edital_nome UNIQUE (edital_id, nome)
     );
 END;
 
 /* Um cargo está em no máximo um grupo (CA04): UK em cargo_id. */
-IF OBJECT_ID('dbo.grupo_cargo_cargo', 'U') IS NULL
+IF OBJECT_ID('dbo.cargo_grupo', 'U') IS NULL
 BEGIN
-    CREATE TABLE dbo.grupo_cargo_cargo (
-        id             INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_grupo_cargo_cargo PRIMARY KEY,
-        grupo_cargo_id INT NOT NULL CONSTRAINT FK_grupo_cargo_cargo_grupo REFERENCES dbo.grupo_cargo (id),
-        cargo_id       INT NOT NULL CONSTRAINT FK_grupo_cargo_cargo_cargo REFERENCES dbo.Cargo (carId),
-        CONSTRAINT UQ_grupo_cargo_cargo_cargo UNIQUE (cargo_id)
+    CREATE TABLE dbo.cargo_grupo (
+        id              INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_cargo_grupo PRIMARY KEY,
+        grupo_cargos_id INT NOT NULL CONSTRAINT FK_cargo_grupo_grupo REFERENCES dbo.grupo_cargos (id),
+        cargo_id        INT NOT NULL CONSTRAINT FK_cargo_grupo_cargo REFERENCES dbo.Cargo (carId),
+        CONSTRAINT UQ_cargo_grupo_cargo UNIQUE (cargo_id)
     );
-    CREATE INDEX IX_grupo_cargo_cargo_grupo ON dbo.grupo_cargo_cargo (grupo_cargo_id);
+    CREATE INDEX IX_cargo_grupo_grupo ON dbo.cargo_grupo (grupo_cargos_id);
 END;
 
 /* Fase gerada para um grupo. Fases sem linha aqui são do modelo antigo. */
-IF OBJECT_ID('dbo.fase_grupo_cargo', 'U') IS NULL
+IF OBJECT_ID('dbo.fase_grupo_cargos', 'U') IS NULL
 BEGIN
-    CREATE TABLE dbo.fase_grupo_cargo (
-        id             INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_fase_grupo_cargo PRIMARY KEY,
-        fases_id       INT NOT NULL CONSTRAINT FK_fase_grupo_cargo_fase REFERENCES dbo.fases (id),
-        grupo_cargo_id INT NOT NULL CONSTRAINT FK_fase_grupo_cargo_grupo REFERENCES dbo.grupo_cargo (id),
-        CONSTRAINT UQ_fase_grupo_cargo_fase UNIQUE (fases_id)
+    CREATE TABLE dbo.fase_grupo_cargos (
+        id              INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_fase_grupo_cargos PRIMARY KEY,
+        fases_id        INT NOT NULL CONSTRAINT FK_fase_grupo_cargos_fase REFERENCES dbo.fases (id),
+        grupo_cargos_id INT NOT NULL CONSTRAINT FK_fase_grupo_cargos_grupo REFERENCES dbo.grupo_cargos (id),
+        CONSTRAINT UQ_fase_grupo_cargos_fase UNIQUE (fases_id)
     );
-    CREATE INDEX IX_fase_grupo_cargo_grupo ON dbo.fase_grupo_cargo (grupo_cargo_id);
+    CREATE INDEX IX_fase_grupo_cargos_grupo ON dbo.fase_grupo_cargos (grupo_cargos_id);
 END;
 
 /* ------------------------------------------------------------------ */
@@ -160,14 +160,30 @@ BEGIN
         visualizacao_fim    DATETIMEOFFSET NULL,
         recurso_inicio      DATETIMEOFFSET NULL,
         recurso_fim         DATETIMEOFFSET NULL,
-        publicada_em        DATETIMEOFFSET NULL,
-        created_at          DATETIMEOFFSET NOT NULL,
+        publicada_em          DATETIMEOFFSET NULL,
+        documento_arquivo_id  BIGINT NULL CONSTRAINT FK_publicacao_documento_arquivo REFERENCES dbo.DocumentoArquivo (id),
+        created_at            DATETIMEOFFSET NOT NULL,
         updated_at          DATETIMEOFFSET NOT NULL,
         CONSTRAINT CK_publicacao_visualizacao CHECK (visualizacao_fim IS NULL OR visualizacao_fim >= visualizacao_inicio),
         CONSTRAINT CK_publicacao_recurso      CHECK (recurso_fim IS NULL OR recurso_fim >= recurso_inicio)
     );
     CREATE INDEX IX_publicacao_fase  ON dbo.publicacao (fases_id);
     CREATE INDEX IX_publicacao_etapa ON dbo.publicacao (etapa_id);
+END;
+
+/* Colunas novas em tabelas já em uso: sempre anuláveis. */
+IF COL_LENGTH('dbo.publicacao', 'documento_arquivo_id') IS NULL
+BEGIN
+    ALTER TABLE dbo.publicacao ADD documento_arquivo_id BIGINT NULL;
+    ALTER TABLE dbo.publicacao ADD CONSTRAINT FK_publicacao_documento_arquivo
+        FOREIGN KEY (documento_arquivo_id) REFERENCES dbo.DocumentoArquivo (id);
+END;
+
+IF COL_LENGTH('dbo.Recurso', 'publicacao_id') IS NULL
+BEGIN
+    ALTER TABLE dbo.Recurso ADD publicacao_id INT NULL;
+    ALTER TABLE dbo.Recurso ADD CONSTRAINT FK_recurso_publicacao
+        FOREIGN KEY (publicacao_id) REFERENCES dbo.publicacao (id);
 END;
 
 COMMIT TRANSACTION;
