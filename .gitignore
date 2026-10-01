@@ -3,4 +3,4 @@ target/
 .env
 
 
-/.speckit
+/resources/application.properties
