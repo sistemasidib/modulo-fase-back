@@ -4,3 +4,4 @@ target/
 
 
 /resources/application.properties
+.speckit/
