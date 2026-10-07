@@ -31,8 +31,13 @@ public record Etapa(
 ) {
 
     public static final int NOME_MAX = 150;
+    /** {@code dom_status_etapa} "aguardando"; {@code etapa.status_id} é NOT NULL e o INSERT envia a coluna. */
+    public static final int STATUS_INICIAL = 1;
 
     public Etapa {
+        if (statusId == null) {
+            statusId = STATUS_INICIAL;
+        }
         if (faseId == null) {
             throw new RegraDeNegocioException("A fase da etapa é obrigatória.");
         }

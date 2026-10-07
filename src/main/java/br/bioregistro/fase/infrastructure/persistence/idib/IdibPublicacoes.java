@@ -52,13 +52,13 @@ public class IdibPublicacoes {
         entidade.publicadaEm = p.publicadaEm();
         entidade.updatedAt = agora;
         entidade.persist();
-        RestricaoDoBanco.flush(Publicacao::flush, "A publicação viola uma restrição do banco.");
+        RestricaoDoBanco.flush(() -> Publicacao.flush(), "A publicação viola uma restrição do banco.");
         return paraDominio(entidade);
     }
 
     public void excluir(int id) {
         Publicacao.deleteById(id);
-        RestricaoDoBanco.flush(Publicacao::flush, "A publicação " + id + " está em uso e não pode ser excluída.");
+        RestricaoDoBanco.flush(() -> Publicacao.flush(), "A publicação " + id + " está em uso e não pode ser excluída.");
     }
 
     static TipoPublicacao tipo(DomTipoPublicacao t) {

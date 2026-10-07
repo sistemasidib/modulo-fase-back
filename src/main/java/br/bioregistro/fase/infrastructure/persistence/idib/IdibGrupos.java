@@ -47,13 +47,13 @@ public class IdibGrupos {
         entidade.nome = grupo.nome();
         entidade.updatedAt = agora;
         entidade.persist();
-        RestricaoDoBanco.flush(GrupoCargos::flush, "Já existe um grupo chamado " + grupo.nome() + " neste edital.");
+        RestricaoDoBanco.flush(() -> GrupoCargos.flush(), "Já existe um grupo chamado " + grupo.nome() + " neste edital.");
         return paraDominio(entidade);
     }
 
     public void excluir(int id) {
         GrupoCargos.deleteById(id);
-        RestricaoDoBanco.flush(GrupoCargos::flush, "O grupo " + id + " ainda está em uso e não pode ser excluído.");
+        RestricaoDoBanco.flush(() -> GrupoCargos.flush(), "O grupo " + id + " ainda está em uso e não pode ser excluído.");
     }
 
     public List<br.bioregistro.fase.domain.model.Cargo> cargosDoEdital(int editalId) {
@@ -78,7 +78,7 @@ public class IdibGrupos {
         vinculo.grupoCargos = GrupoCargos.findById(grupoId);
         vinculo.cargoId = cargoId;
         vinculo.persist();
-        RestricaoDoBanco.flush(CargoGrupo::flush, "O cargo " + cargoId + " já está em outro grupo.");
+        RestricaoDoBanco.flush(() -> CargoGrupo.flush(), "O cargo " + cargoId + " já está em outro grupo.");
     }
 
     public void removerCargo(int grupoId, int cargoId) {

@@ -51,13 +51,13 @@ public class IdecanEtapas {
         entidade.publicadaEm = etapa.publicadaEm();
         entidade.updatedAt = agora;
         entidade.persist();
-        RestricaoDoBanco.flush(Etapa::flush, "A etapa viola uma restrição do banco (tipo ou status inexistente?).");
+        RestricaoDoBanco.flush(() -> Etapa.flush(), "A etapa viola uma restrição do banco (tipo ou status inexistente?).");
         return paraDominio(entidade);
     }
 
     public void excluir(int id) {
         Etapa.deleteById(id);
-        RestricaoDoBanco.flush(Etapa::flush,
+        RestricaoDoBanco.flush(() -> Etapa.flush(),
                 "A etapa " + id + " tem candidatos, documentos ou recursos vinculados e não pode ser excluída.");
     }
 

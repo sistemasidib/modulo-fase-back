@@ -6,6 +6,10 @@ import jakarta.persistence.PersistenceException;
 /**
  * Força o flush para que violações de FK/UK aconteçam aqui (e não no commit) e as
  * traduz em {@link ConflitoException}.
+ *
+ * <p>Passe {@code () -> Entidade.flush()}, nunca {@code Entidade::flush}: a referência de
+ * método resolve para {@code PanacheEntityBase.flush}, que o Panache não reescreve, e falha
+ * em tempo de execução.
  */
 public final class RestricaoDoBanco {
 

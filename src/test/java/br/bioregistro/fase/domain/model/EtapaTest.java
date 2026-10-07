@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -20,6 +21,11 @@ class EtapaTest {
     void etapaPodeNascerSemDatas() {
         Etapa etapa = etapa(null, 1, "Prova objetiva", 1, null, null, null);
         assertNull(etapa.dataAbertura());
+    }
+
+    @Test
+    void etapaSemStatusNasceAguardando() {
+        assertEquals(Etapa.STATUS_INICIAL, etapa(null, 1, "Prova objetiva", 1, null, null, null).statusId());
     }
 
     @Test

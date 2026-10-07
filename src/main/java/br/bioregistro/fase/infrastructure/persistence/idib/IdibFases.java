@@ -66,13 +66,13 @@ public class IdibFases {
         entidade.dataFechamento = fase.dataFechamento();
         entidade.updatedAt = agora;
         entidade.persist();
-        RestricaoDoBanco.flush(Fase::flush, "Já existe uma fase com a ordem " + fase.ordem() + " neste edital.");
+        RestricaoDoBanco.flush(() -> Fase.flush(), "Já existe uma fase com a ordem " + fase.ordem() + " neste edital.");
         return paraDominio(entidade);
     }
 
     public void excluir(int id) {
         Fase.deleteById(id);
-        RestricaoDoBanco.flush(Fase::flush,
+        RestricaoDoBanco.flush(() -> Fase.flush(),
                 "A fase " + id + " tem etapas ou candidatos vinculados e não pode ser excluída.");
     }
 
