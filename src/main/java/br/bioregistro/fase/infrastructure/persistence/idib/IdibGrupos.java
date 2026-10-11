@@ -96,6 +96,11 @@ public class IdibGrupos {
         FaseGrupoCargos.delete("fase.id", faseId);
     }
 
+    public Optional<Integer> grupoDaFase(int faseId) {
+        return FaseGrupoCargos.<FaseGrupoCargos>find("fase.id", faseId).firstResultOptional()
+                .map(vinculo -> vinculo.grupoCargos.id);
+    }
+
     public boolean possuiFases(int grupoId) {
         return FaseGrupoCargos.count("grupoCargos.id", grupoId) > 0;
     }

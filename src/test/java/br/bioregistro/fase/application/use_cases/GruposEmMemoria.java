@@ -103,6 +103,11 @@ public class GruposEmMemoria implements GrupoCargoRepository {
     }
 
     @Override
+    public Optional<Integer> grupoDaFase(Instituicao instituicao, int faseId) {
+        return Optional.ofNullable(fases.grupoDaFase.get(instituicao + ":" + faseId));
+    }
+
+    @Override
     public boolean possuiFases(Instituicao instituicao, int grupoId) {
         return fases.grupoDaFase.containsValue(grupoId);
     }

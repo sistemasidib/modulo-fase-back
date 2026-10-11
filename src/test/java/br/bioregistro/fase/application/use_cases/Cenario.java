@@ -18,6 +18,8 @@ class Cenario {
     final PublicacoesEmMemoria publicacoes = new PublicacoesEmMemoria();
     final TiposEmMemoria tipos = new TiposEmMemoria();
     final EspacosDePublicacao espacos = new EspacosDePublicacao(tipos, publicacoes);
+    final CriteriosDesempateEmMemoria criterios = new CriteriosDesempateEmMemoria();
+    final DisciplinasEmMemoria disciplinas = new DisciplinasEmMemoria();
 
     Cenario comEdital(Instituicao instituicao, int editalId) {
         fases.comEdital(instituicao, editalId);
@@ -29,7 +31,7 @@ class Cenario {
     }
 
     ExcluirFase excluirFase() {
-        return new ExcluirFase(fases, grupos, espacos);
+        return new ExcluirFase(fases, grupos, espacos, criterios);
     }
 
     CriarEtapa criarEtapa() {
@@ -41,7 +43,7 @@ class Cenario {
     }
 
     ExcluirEtapa excluirEtapa() {
-        return new ExcluirEtapa(etapas, espacos);
+        return new ExcluirEtapa(etapas, espacos, disciplinas);
     }
 
     GerarFasesDoGrupo gerarFases() {

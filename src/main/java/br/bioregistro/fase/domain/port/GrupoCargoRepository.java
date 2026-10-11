@@ -35,5 +35,8 @@ public interface GrupoCargoRepository {
 
     void desvincularFase(Instituicao instituicao, int faseId);
 
+    /** Grupo da fase; vazio nas fases do modelo antigo, sem grupo. */
+    Optional<Integer> grupoDaFase(Instituicao instituicao, int faseId);
+
     boolean possuiFases(Instituicao instituicao, int grupoId);
 }

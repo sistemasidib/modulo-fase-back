@@ -7,7 +7,8 @@ public record TipoEtapa(Integer id, String valor, String descricao) {
 
     /** Fases de execução: o candidato é avaliado (RN05 da spec 003). */
     private static final Set<String> EXECUCAO = Set.of(
-            "prova_objetiva", "prova_discursiva", "taf", "the", "heteroidentificacao", "biopsicossocial");
+            "prova_objetiva", "prova_discursiva", "taf", "the", "heteroidentificacao", "biopsicossocial",
+            "prova_titulos");
 
     public enum Categoria { EXECUCAO, ANALISE, LEGADO }
 

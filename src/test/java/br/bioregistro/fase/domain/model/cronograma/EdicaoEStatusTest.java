@@ -90,6 +90,8 @@ class EdicaoEStatusTest {
     @Test
     void cb02_categoriaDoTipoDeEtapa() {
         assertEquals(TipoEtapa.Categoria.EXECUCAO, new TipoEtapa(9, "prova_objetiva", "").categoria());
+        assertEquals(TipoEtapa.Categoria.EXECUCAO, new TipoEtapa(22, "prova_titulos", "").categoria());
+        assertEquals(TipoEtapa.Categoria.ANALISE, new TipoEtapa(20, "analise_prova_titulos", "").categoria());
         assertEquals(TipoEtapa.Categoria.ANALISE, new TipoEtapa(15, "analise_pcd", "").categoria());
         assertEquals(TipoEtapa.Categoria.LEGADO, new TipoEtapa(1, "inscricao", "").categoria());
     }
