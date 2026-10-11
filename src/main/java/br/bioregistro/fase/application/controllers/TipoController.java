@@ -8,6 +8,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
@@ -25,8 +26,9 @@ public class TipoController {
 
     @GET
     @Path("etapa")
-    public List<TipoEtapaResponse> tiposEtapa(@PathParam("instituicao") Instituicao instituicao) {
-        return listarTipos.etapas(instituicao);
+    public List<TipoEtapaResponse> tiposEtapa(@PathParam("instituicao") Instituicao instituicao,
+                                              @QueryParam("categoria") String categoria) {
+        return listarTipos.etapas(instituicao, categoria);
     }
 
     @GET

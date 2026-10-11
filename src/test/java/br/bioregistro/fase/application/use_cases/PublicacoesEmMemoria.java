@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** Repositório falso de publicações. Usa uma única instituição por teste. */
-class PublicacoesEmMemoria implements PublicacaoRepository {
+public class PublicacoesEmMemoria implements PublicacaoRepository {
 
     final Map<Integer, Publicacao> publicacoes = new LinkedHashMap<>();
     private int proximoId = 1;

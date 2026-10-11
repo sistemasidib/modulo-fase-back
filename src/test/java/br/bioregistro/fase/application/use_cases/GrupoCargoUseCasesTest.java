@@ -157,4 +157,12 @@ class GrupoCargoUseCasesTest {
         new ExcluirGrupoCargo(c.grupos).executar(IDECAN, medio);
         assertTrue(c.grupos.grupoDoCargo(IDECAN, 101).isEmpty());
     }
+
+    @Test
+    void analiseDeSolicitacoesNaoViraEtapaDeFase() { // spec 003, RN05 / CB02
+        int medio = grupo("Nível médio");
+        adicionar(medio, 101);
+        assertThrows(RegraDeNegocioException.class,
+                () -> c.gerarFases().executar(IDECAN, medio, pedido("Fase 1", PROVA_OBJETIVA, TiposEmMemoria.ANALISE_PCD)));
+    }
 }

@@ -34,7 +34,7 @@ public class CriarEtapa {
             throw new NaoEncontradoException("Fase", faseId);
         }
         Etapa etapa = request.paraDominio(null, faseId);
-        TipoEtapaExistente.exigir(tipos, instituicao, etapa.tipoId());
+        TipoEtapaExistente.exigirNovo(tipos, instituicao, etapa.tipoId());
         EtapaPreRequisito.exigirExistente(etapas, instituicao, etapa);
         Etapa criada = etapas.salvar(instituicao, etapa);
         espacos.criarParaEtapa(instituicao, faseId, criada.id(), criada.tipoId());

@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /** Repositório falso para testar os use cases sem banco. */
-class FasesEmMemoria implements FaseRepository {
+public class FasesEmMemoria implements FaseRepository {
 
     final Map<Instituicao, Map<Integer, Fase>> fases = new HashMap<>();
     /** faseId → grupoId, preenchido por {@link GruposEmMemoria#vincularFase}. */
@@ -23,7 +23,7 @@ class FasesEmMemoria implements FaseRepository {
     final Set<String> editais = new HashSet<>();
     private int proximoId = 1;
 
-    FasesEmMemoria comEdital(Instituicao instituicao, int editalId) {
+    public FasesEmMemoria comEdital(Instituicao instituicao, int editalId) {
         editais.add(instituicao + ":" + editalId);
         return this;
     }

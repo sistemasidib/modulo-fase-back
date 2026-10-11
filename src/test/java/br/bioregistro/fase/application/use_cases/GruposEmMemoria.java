@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** Repositório falso de grupos. Usa uma única instituição por teste, para simplificar. */
-class GruposEmMemoria implements GrupoCargoRepository {
+public class GruposEmMemoria implements GrupoCargoRepository {
 
     private final FasesEmMemoria fases;
     final Map<Integer, GrupoCargo> grupos = new HashMap<>();
@@ -22,11 +22,11 @@ class GruposEmMemoria implements GrupoCargoRepository {
     final Map<Integer, Integer> grupoPorCargo = new HashMap<>();
     private int proximoId = 1;
 
-    GruposEmMemoria(FasesEmMemoria fases) {
+    public GruposEmMemoria(FasesEmMemoria fases) {
         this.fases = fases;
     }
 
-    GruposEmMemoria comCargos(int editalId, Integer... cargoIds) {
+    public GruposEmMemoria comCargos(int editalId, Integer... cargoIds) {
         List<Cargo> cargos = new ArrayList<>();
         for (Integer id : cargoIds) {
             cargos.add(new Cargo(id, "Cargo " + id));

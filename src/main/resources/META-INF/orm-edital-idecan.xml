@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-mappings version="3.1"
+    xmlns="https://jakarta.ee/xml/ns/persistence"
+    xmlns:hibernate="http://www.hibernate.org/xsd/orm/hibernate"
+    xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <!-- Entidades do core com @Id sem @GeneratedValue — IDENTITY no SQL Server -->
+    <entity class="br.com.bio.registro.core.runtime.entities.idecan.dbo.Edital"
+            access="FIELD"
+            hibernate:dynamic-insert="true">
+        <attributes>
+            <id name="ediId">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+
+    <entity class="br.com.bio.registro.core.runtime.entities.idecan.dbo.Localidade"
+            access="FIELD"
+            hibernate:dynamic-insert="true">
+        <attributes>
+            <id name="locId">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+
+    <entity class="br.com.bio.registro.core.runtime.entities.idecan.dbo.BancoEdital"
+            access="FIELD"
+            hibernate:dynamic-insert="true">
+        <attributes>
+            <id name="bedId">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+
+    <entity class="br.com.bio.registro.core.runtime.entities.idecan.dbo.UsuarioSistema"
+            access="FIELD"
+            hibernate:dynamic-insert="true">
+        <attributes>
+            <id name="usiId">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+
+    <entity class="br.com.bio.registro.core.runtime.entities.idecan.dbo.SolicitacaoAtendimentoEspecial"
+            access="FIELD"
+            hibernate:dynamic-insert="true">
+        <attributes>
+            <id name="saeId">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+
+    <entity class="br.com.bio.registro.core.runtime.entities.idecan.dbo.TipoSolicitacaoAtendimentoEspecial"
+            access="FIELD"
+            hibernate:dynamic-insert="true">
+        <attributes>
+            <id name="tseId">
+                <generated-value strategy="IDENTITY"/>
+            </id>
+        </attributes>
+    </entity>
+</entity-mappings>

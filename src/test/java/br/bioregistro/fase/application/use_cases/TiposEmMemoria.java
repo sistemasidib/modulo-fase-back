@@ -10,10 +10,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /** Mesmos valores do script {@code db/001-fases-e-etapas.sql}, resumidos. */
-class TiposEmMemoria implements TipoRepository {
+public class TiposEmMemoria implements TipoRepository {
 
-    static final int PROVA_OBJETIVA = 1;
-    static final int TAF = 2;
+    public static final int PROVA_OBJETIVA = 1;
+    public static final int TAF = 2;
+    public static final int ANALISE_PCD = 3;
 
     static final TipoPublicacao LOCAL_PROVA = new TipoPublicacao(1, "local_prova", "Local de prova", false);
     static final TipoPublicacao GABARITO_PRELIMINAR =
@@ -27,7 +28,8 @@ class TiposEmMemoria implements TipoRepository {
 
     private static final List<TipoEtapa> TIPOS_ETAPA = List.of(
             new TipoEtapa(PROVA_OBJETIVA, "prova_objetiva", "Prova objetiva"),
-            new TipoEtapa(TAF, "taf", "Teste de aptidão física (TAF)"));
+            new TipoEtapa(TAF, "taf", "Teste de aptidão física (TAF)"),
+            new TipoEtapa(ANALISE_PCD, "analise_pcd", "Análise de solicitações: PcD"));
 
     private static final List<TipoPublicacao> TIPOS_PUBLICACAO =
             List.of(LOCAL_PROVA, GABARITO_PRELIMINAR, GABARITO_DEFINITIVO, RESULTADO_PRELIMINAR, RESULTADO_OFICIAL);

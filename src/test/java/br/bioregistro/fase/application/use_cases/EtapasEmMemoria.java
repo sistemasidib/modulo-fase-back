@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /** Repositório falso para testar os use cases sem banco. */
-class EtapasEmMemoria implements EtapaRepository {
+public class EtapasEmMemoria implements EtapaRepository {
 
     final Map<Instituicao, Map<Integer, Etapa>> etapas = new HashMap<>();
     private int proximoId = 1;

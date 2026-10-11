@@ -21,4 +21,16 @@ final class Parametros {
         }
         return request;
     }
+
+    /**
+     * Autor das ações do histórico, do header {@code X-Usuario} (URL-encoded pelo front, por causa
+     * dos acentos). Pendência "Autor das ações" da spec 003-B: trocar pelo usuário autenticado.
+     */
+    static String autor(String header) {
+        if (header == null || header.isBlank()) {
+            return "não identificado";
+        }
+        String nome = java.net.URLDecoder.decode(header, java.nio.charset.StandardCharsets.UTF_8).strip();
+        return nome.length() > 150 ? nome.substring(0, 150) : nome;
+    }
 }

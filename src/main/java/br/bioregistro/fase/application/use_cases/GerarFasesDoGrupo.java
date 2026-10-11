@@ -77,7 +77,7 @@ public class GerarFasesDoGrupo {
             if (pedida.tipoId() == null) {
                 throw new RegraDeNegocioException("O tipo da etapa é obrigatório.");
             }
-            TipoEtapa tipo = TipoEtapaExistente.exigir(tipos, instituicao, pedida.tipoId());
+            TipoEtapa tipo = TipoEtapaExistente.exigirNovo(tipos, instituicao, pedida.tipoId());
             String nome = pedida.nome() == null || pedida.nome().isBlank() ? tipo.descricao() : pedida.nome();
             Etapa etapa = etapas.salvar(instituicao, new Etapa(null, fase.id(), nome, tipo.id(), null, null, null,
                     null, false, false, false, false, null, null, null, null, null, null));

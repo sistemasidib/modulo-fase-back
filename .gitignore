@@ -5,3 +5,5 @@ target/
 
 /resources/application.properties
 .speckit/
+docs/
+.claude/
