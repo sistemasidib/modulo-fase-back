@@ -1,6 +1,7 @@
 package br.bioregistro.fase.application.controllers;
 
 import br.bioregistro.fase.domain.port.ConcursoRepository;
+import br.bioregistro.fase.domain.port.CriterioCorrecaoRepository;
 import br.bioregistro.fase.domain.port.CriterioDesempateRepository;
 import br.bioregistro.fase.domain.port.CronogramaRepository;
 import br.bioregistro.fase.domain.port.DisciplinaRepository;
@@ -9,6 +10,7 @@ import br.bioregistro.fase.domain.port.FaseRepository;
 import br.bioregistro.fase.domain.port.GrupoCargoRepository;
 import br.bioregistro.fase.domain.port.PublicacaoRepository;
 import br.bioregistro.fase.domain.port.TipoRepository;
+import br.bioregistro.fase.domain.port.VinculoCronogramaRepository;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -67,6 +69,11 @@ public class RepositoriosEmMemoria {
     }
 
     @Produces
+    VinculoCronogramaRepository vinculos() {
+        return delegar(VinculoCronogramaRepository.class, a -> a.vinculos);
+    }
+
+    @Produces
     DisciplinaRepository disciplinas() {
         return delegar(DisciplinaRepository.class, a -> a.disciplinas);
     }
@@ -74,6 +81,11 @@ public class RepositoriosEmMemoria {
     @Produces
     CriterioDesempateRepository criteriosDesempate() {
         return delegar(CriterioDesempateRepository.class, a -> a.criteriosDesempate);
+    }
+
+    @Produces
+    CriterioCorrecaoRepository criteriosCorrecao() {
+        return delegar(CriterioCorrecaoRepository.class, a -> a.criteriosCorrecao);
     }
 
     @Produces

@@ -19,12 +19,11 @@ class EdicaoEStatusTest {
     private static final Esqueleto ESQ = EsqueletoIdecanV1.ESQUELETO;
     private static final LocalDate HOJE = LocalDate.of(2026, 10, 10);
 
+    /** Spec 005, RN08: edital no passado é válido (publicado, reprogramado, retificado). */
     @Test
-    void cb11_editalAntesDeHojeEhRecusado() {
+    void editalAntesDeHojeEhValido() {
         Edicao ontem = new Edicao(Set.of(), HOJE.minusDays(1), Map.of(), Set.of(), Set.of());
-        assertThrows(RegraDeNegocioException.class, () -> ontem.exigirEditalNoPrazo(HOJE));
-        Edicao hoje = new Edicao(Set.of(), HOJE, Map.of(), Set.of(), Set.of());
-        assertDoesNotThrow(() -> hoje.exigirEditalNoPrazo(HOJE));
+        assertDoesNotThrow(() -> ontem.validar(ESQ));
     }
 
     @Test

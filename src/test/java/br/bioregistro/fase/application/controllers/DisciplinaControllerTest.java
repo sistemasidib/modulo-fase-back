@@ -44,7 +44,7 @@ class DisciplinaControllerTest {
                 .body("disciplinas.nome", contains("Direito Constitucional", "Direito Ambiental"))
                 .body("disciplinas.questoes", contains(10, 5))
                 .body("disciplinas.peso", contains(nullValue(), nullValue()))
-                .body("grupoId", is(grupo))
+                .body("grupoIds", contains(grupo))
                 .body("cargoIds", contains(101));
     }
 

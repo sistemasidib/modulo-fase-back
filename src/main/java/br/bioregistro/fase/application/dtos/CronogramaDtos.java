@@ -2,6 +2,7 @@ package br.bioregistro.fase.application.dtos;
 
 import br.bioregistro.fase.domain.model.cronograma.CronogramaCalculado;
 import br.bioregistro.fase.domain.model.cronograma.Edicao;
+import br.bioregistro.fase.domain.model.cronograma.EditalDoCronograma;
 import br.bioregistro.fase.domain.model.cronograma.EtapaModelo;
 import br.bioregistro.fase.domain.model.cronograma.GrupoModelo;
 import br.bioregistro.fase.domain.model.cronograma.Mudanca;
@@ -11,6 +12,7 @@ import br.bioregistro.fase.domain.model.cronograma.StatusEtapa;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Contrato HTTP do cronograma (spec 003-B, plano §5). {@link Edicao}, {@link Mudanca},
@@ -40,10 +42,31 @@ public final class CronogramaDtos {
     public record AbrirCronogramaResponse(int id, boolean criado) {
     }
 
-    public record CronogramaResponse(int id, int concursoId, String esqueleto, int versao, String situacao,
+    /**
+     * @param concursoId  nulo = cronograma separado de um edital
+     * @param editalId    nulo = o cronograma compartilhado; preenchido = a visão do edital
+     * @param sobreposto  códigos que o edital mudou só para ele (nulo na visão compartilhada)
+     * @param editais     editais que seguem o cronograma
+     */
+    public record CronogramaResponse(int id, Integer concursoId, Integer editalId, String esqueleto, int versao,
+                                     String situacao,
                                      String justificativa, Edicao edicao, List<ParametroResponse> parametros,
                                      CronogramaCalculado calculado, List<StatusEtapaResponse> status,
-                                     List<Particularidade> particularidades) {
+                                     List<Particularidade> particularidades, Set<String> sobreposto,
+                                     List<EditalDoCronogramaResponse> editais) {
+    }
+
+    /** @param sobreposto códigos em que o edital diverge do compartilhado */
+    public record EditalDoCronogramaResponse(int editalId, boolean divergente, Set<String> sobreposto) {
+
+        public static EditalDoCronogramaResponse de(EditalDoCronograma e) {
+            return new EditalDoCronogramaResponse(e.editalId(), !e.sobreposicao().isVazia(),
+                    e.sobreposicao().codigos());
+        }
+    }
+
+    /** Edital passa a seguir outro cronograma. */
+    public record SeguirCronogramaRequest(Integer cronogramaId) {
     }
 
     /**

@@ -18,6 +18,10 @@ public record GerarFasesRequest(List<FaseGerada> fases) {
     ) {
     }
 
-    public record EtapaGerada(Integer tipoId, String nome) {
+    /**
+     * @param publicacoes ids dos tipos de publicação da etapa (local de prova, gabarito...);
+     *                    nulo = os padrão do tipo de etapa
+     */
+    public record EtapaGerada(Integer tipoId, String nome, List<Integer> publicacoes) {
     }
 }

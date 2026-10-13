@@ -31,12 +31,16 @@ public interface GrupoCargoRepository {
 
     void removerCargo(Instituicao instituicao, int grupoId, int cargoId);
 
+    /** O grupo passa a participar da fase (uma fase do edital tem um ou mais grupos). */
     void vincularFase(Instituicao instituicao, int faseId, int grupoId);
 
+    /** Todos os grupos deixam a fase. */
     void desvincularFase(Instituicao instituicao, int faseId);
 
-    /** Grupo da fase; vazio nas fases do modelo antigo, sem grupo. */
-    Optional<Integer> grupoDaFase(Instituicao instituicao, int faseId);
+    void desvincularFase(Instituicao instituicao, int faseId, int grupoId);
+
+    /** Grupos que participam da fase; vazio = nenhum grupo ainda (ou fase do modelo antigo). */
+    List<Integer> gruposDaFase(Instituicao instituicao, int faseId);
 
     boolean possuiFases(Instituicao instituicao, int grupoId);
 }

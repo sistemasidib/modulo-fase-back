@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 
 /** Repositório falso de grupos. Usa uma única instituição por teste, para simplificar. */
 public class GruposEmMemoria implements GrupoCargoRepository {
@@ -94,21 +96,26 @@ public class GruposEmMemoria implements GrupoCargoRepository {
 
     @Override
     public void vincularFase(Instituicao instituicao, int faseId, int grupoId) {
-        fases.grupoDaFase.put(instituicao + ":" + faseId, grupoId);
+        fases.gruposDaFase.computeIfAbsent(instituicao + ":" + faseId, k -> new TreeSet<>()).add(grupoId);
     }
 
     @Override
     public void desvincularFase(Instituicao instituicao, int faseId) {
-        fases.grupoDaFase.remove(instituicao + ":" + faseId);
+        fases.gruposDaFase.remove(instituicao + ":" + faseId);
     }
 
     @Override
-    public Optional<Integer> grupoDaFase(Instituicao instituicao, int faseId) {
-        return Optional.ofNullable(fases.grupoDaFase.get(instituicao + ":" + faseId));
+    public void desvincularFase(Instituicao instituicao, int faseId, int grupoId) {
+        fases.gruposDaFase.getOrDefault(instituicao + ":" + faseId, new TreeSet<>()).remove(grupoId);
+    }
+
+    @Override
+    public List<Integer> gruposDaFase(Instituicao instituicao, int faseId) {
+        return List.copyOf(fases.gruposDaFase.getOrDefault(instituicao + ":" + faseId, Set.of()));
     }
 
     @Override
     public boolean possuiFases(Instituicao instituicao, int grupoId) {
-        return fases.grupoDaFase.containsValue(grupoId);
+        return fases.gruposDaFase.values().stream().anyMatch(g -> g.contains(grupoId));
     }
 }

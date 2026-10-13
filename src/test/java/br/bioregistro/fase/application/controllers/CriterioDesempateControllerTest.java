@@ -62,7 +62,9 @@ class CriterioDesempateControllerTest {
 
     @Test
     void copiaSubstituindoOsCriteriosDoDestino() {
-        int outra = gerarFase(grupoComCargos("Nível superior", 102), "Prova objetiva", PROVA_OBJETIVA);
+        // outra prova objetiva no mesmo edital (fase do modelo anterior, criada à mão)
+        int outra = FaseEtapaControllerTest.criarFase(10, "Outra", 9);
+        FaseEtapaControllerTest.criarEtapa(outra, "Prova objetiva", PROVA_OBJETIVA);
         given().contentType(ContentType.JSON).body(sorteio()).when().post(urlDa(outra)).then().statusCode(201);
         criar(idoso()).statusCode(201);
         criar(disciplina("Direito Civil")).statusCode(201);

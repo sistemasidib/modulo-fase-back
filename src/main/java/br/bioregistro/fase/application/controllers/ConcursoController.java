@@ -98,4 +98,15 @@ public class ConcursoController {
         AbrirCronogramaResponse aberto = cronograma.abrir(instituicao, id, Parametros.autor(usuario));
         return Response.status(aberto.criado() ? Response.Status.CREATED : Response.Status.OK).entity(aberto).build();
     }
+
+    /** Cronograma próprio do edital, copiado do compartilhado. 201 quando cria; 200 quando já existia. */
+    @POST
+    @Path("{id}/editais/{editalId}/cronograma")
+    @Consumes(MediaType.WILDCARD)
+    public Response abrirCronogramaDoEdital(@PathParam("instituicao") Instituicao instituicao,
+                                            @PathParam("id") int id, @PathParam("editalId") int editalId,
+                                            @HeaderParam("X-Usuario") String usuario) {
+        AbrirCronogramaResponse aberto = cronograma.abrirDoEdital(instituicao, id, editalId, Parametros.autor(usuario));
+        return Response.status(aberto.criado() ? Response.Status.CREATED : Response.Status.OK).entity(aberto).build();
+    }
 }

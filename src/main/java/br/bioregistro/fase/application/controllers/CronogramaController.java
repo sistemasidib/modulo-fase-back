@@ -22,6 +22,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
@@ -46,10 +47,21 @@ public class CronogramaController {
         return consultar.modelo(instituicao);
     }
 
+    /** {@code editalId}: a visão do edital, com a sobreposição dele; sem ele, o compartilhado. */
     @GET
     @Path("cronogramas/{id}")
-    public CronogramaResponse buscar(@PathParam("instituicao") Instituicao instituicao, @PathParam("id") int id) {
-        return consultar.buscar(instituicao, id);
+    public CronogramaResponse buscar(@PathParam("instituicao") Instituicao instituicao, @PathParam("id") int id,
+                                     @QueryParam("editalId") Integer editalId) {
+        return consultar.buscar(instituicao, id, editalId);
+    }
+
+    /** Apaga a sobreposição: o edital volta a seguir o compartilhado em tudo. */
+    @DELETE
+    @Path("cronogramas/{id}/editais/{editalId}/sobreposicao")
+    public CronogramaResponse restaurar(@PathParam("instituicao") Instituicao instituicao, @PathParam("id") int id,
+                                        @PathParam("editalId") int editalId,
+                                        @HeaderParam("X-Usuario") String usuario) {
+        return editar.restaurar(instituicao, id, editalId, Parametros.autor(usuario));
     }
 
     /** Calcula sem gravar (geração ao vivo da aba Fases). */
@@ -72,8 +84,9 @@ public class CronogramaController {
     @PUT
     @Path("cronogramas/{id}")
     public CronogramaResponse salvar(@PathParam("instituicao") Instituicao instituicao, @PathParam("id") int id,
+                                     @QueryParam("editalId") Integer editalId,
                                      @HeaderParam("X-Usuario") String usuario, SalvarCronogramaRequest request) {
-        return editar.salvar(instituicao, id, Parametros.corpo(request), Parametros.autor(usuario));
+        return editar.salvar(instituicao, id, editalId, Parametros.corpo(request), Parametros.autor(usuario));
     }
 
     /** Só leitura: o histórico não tem edição nem exclusão (RN27). */
@@ -105,8 +118,9 @@ public class CronogramaController {
     @Path("cronogramas/{id}/etapas/{codigo}/status")
     public CronogramaResponse marcarStatus(@PathParam("instituicao") Instituicao instituicao, @PathParam("id") int id,
                                            @PathParam("codigo") String codigo,
+                                           @QueryParam("editalId") Integer editalId,
                                            @HeaderParam("X-Usuario") String usuario, StatusRequest request) {
-        return editar.marcarStatus(instituicao, id, codigo, Parametros.corpo(request).status(),
+        return editar.marcarStatus(instituicao, id, editalId, codigo, Parametros.corpo(request).status(),
                 Parametros.autor(usuario));
     }
 
@@ -116,7 +130,8 @@ public class CronogramaController {
     @Consumes(MediaType.WILDCARD)
     public CronogramaResponse registrarPrimeiroRecurso(@PathParam("instituicao") Instituicao instituicao,
                                                        @PathParam("id") int id, @PathParam("codigo") String codigo,
+                                                       @QueryParam("editalId") Integer editalId,
                                                        @HeaderParam("X-Usuario") String usuario) {
-        return editar.registrarPrimeiroRecurso(instituicao, id, codigo, Parametros.autor(usuario));
+        return editar.registrarPrimeiroRecurso(instituicao, id, editalId, codigo, Parametros.autor(usuario));
     }
 }

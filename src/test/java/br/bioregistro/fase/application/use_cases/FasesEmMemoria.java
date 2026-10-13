@@ -18,8 +18,8 @@ import java.util.Set;
 public class FasesEmMemoria implements FaseRepository {
 
     final Map<Instituicao, Map<Integer, Fase>> fases = new HashMap<>();
-    /** faseId → grupoId, preenchido por {@link GruposEmMemoria#vincularFase}. */
-    final Map<String, Integer> grupoDaFase = new HashMap<>();
+    /** faseId → grupos que participam, preenchido por {@link GruposEmMemoria#vincularFase}. */
+    final Map<String, Set<Integer>> gruposDaFase = new HashMap<>();
     final Set<String> editais = new HashSet<>();
     private int proximoId = 1;
 
@@ -48,7 +48,7 @@ public class FasesEmMemoria implements FaseRepository {
     @Override
     public List<Fase> listarPorGrupo(Instituicao instituicao, int grupoId) {
         return de(instituicao).values().stream()
-                .filter(f -> Objects.equals(grupoDaFase.get(instituicao + ":" + f.id()), grupoId))
+                .filter(f -> gruposDaFase.getOrDefault(instituicao + ":" + f.id(), Set.of()).contains(grupoId))
                 .sorted(Comparator.comparing(Fase::ordem))
                 .toList();
     }

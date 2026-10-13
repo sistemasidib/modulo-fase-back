@@ -4,7 +4,6 @@ import br.bioregistro.fase.application.dtos.FaseDoConcursoResponse;
 import br.bioregistro.fase.domain.exception.NaoEncontradoException;
 import br.bioregistro.fase.domain.model.Etapa;
 import br.bioregistro.fase.domain.model.Fase;
-import br.bioregistro.fase.domain.model.GrupoCargo;
 import br.bioregistro.fase.domain.model.Instituicao;
 import br.bioregistro.fase.domain.model.TipoEtapa;
 import br.bioregistro.fase.domain.port.EtapaRepository;
@@ -24,9 +23,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Fases do concurso, derivadas das fases dos grupos de cargos (sem tabela própria). Cada grupo tem
- * a sua fase; a fase do concurso é o tipo de etapa de execução que aparece nas fases dos grupos.
- * A ordem segue a menor ordem de fase em que o tipo aparece no edital.
+ * Fases do concurso: o tipo de etapa de execução das fases do edital e os grupos que participam
+ * delas (spec 005: a fase é do edital e define os grupos). Fases do modelo anterior, uma por grupo,
+ * aparecem juntas no mesmo tipo. A ordem segue a menor ordem de fase em que o tipo aparece.
  */
 @ApplicationScoped
 public class FasesDoConcurso {
@@ -53,17 +52,16 @@ public class FasesDoConcurso {
                 .collect(Collectors.toMap(TipoEtapa::id, Function.identity()));
 
         Map<Integer, Acumulado> porTipo = new LinkedHashMap<>();
-        for (GrupoCargo grupo : grupos.listarPorEdital(instituicao, editalId)) {
-            for (Fase fase : fases.listarPorGrupo(instituicao, grupo.id())) {
-                for (Etapa etapa : etapas.listarPorFase(instituicao, fase.id())) {
-                    TipoEtapa tipo = execucao.get(etapa.tipoId());
-                    if (tipo == null) {
-                        continue;
-                    }
-                    Acumulado a = porTipo.computeIfAbsent(tipo.id(), id -> new Acumulado(tipo));
-                    a.menorOrdem = Math.min(a.menorOrdem, fase.ordem());
-                    a.grupoIds.add(grupo.id());
+        for (Fase fase : fases.listarPorEdital(instituicao, editalId)) {
+            List<Integer> participantes = grupos.gruposDaFase(instituicao, fase.id());
+            for (Etapa etapa : etapas.listarPorFase(instituicao, fase.id())) {
+                TipoEtapa tipo = execucao.get(etapa.tipoId());
+                if (tipo == null) {
+                    continue;
                 }
+                Acumulado a = porTipo.computeIfAbsent(tipo.id(), id -> new Acumulado(tipo));
+                a.menorOrdem = Math.min(a.menorOrdem, fase.ordem());
+                a.grupoIds.addAll(participantes);
             }
         }
 

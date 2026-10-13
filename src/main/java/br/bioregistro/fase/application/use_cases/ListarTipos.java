@@ -26,7 +26,7 @@ public class ListarTipos {
         TipoEtapa.Categoria filtro = categoria(categoria);
         return tipos.tiposEtapa(instituicao).stream()
                 .filter(t -> filtro == null || t.categoria() == filtro)
-                .map(TipoEtapaResponse::de)
+                .map(t -> TipoEtapaResponse.de(t, tipos.publicacoesPadrao(instituicao, t.id())))
                 .toList();
     }
 

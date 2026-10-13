@@ -59,7 +59,8 @@ public class ConsultarConcursos {
 
     ConcursoResponse resposta(Instituicao instituicao, Concurso concurso) {
         return ConcursoResponse.de(concurso, concursos.editais(instituicao, concurso.id()),
-                cronogramas.idDoConcurso(instituicao, concurso.id()).orElse(null));
+                cronogramas.idDoConcurso(instituicao, concurso.id()).orElse(null),
+                cronogramas.cronogramasDosEditais(instituicao, concurso.id()));
     }
 
     private static String chave(String nome) {

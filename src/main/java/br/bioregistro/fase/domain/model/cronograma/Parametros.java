@@ -34,7 +34,7 @@ public record Parametros(Map<String, Integer> valores) {
             DURACAO_INSCRICOES, "Duração das inscrições",
             ISENCAO, "Pedido de isenção da taxa (duração)",
             PAGAMENTO, "Último dia de pagamento (dias depois do fim das inscrições)",
-            INTERVALO_PROVA, "Fim das inscrições → prova objetiva (levada ao domingo seguinte)",
+            INTERVALO_PROVA, "Fim das inscrições → prova objetiva (sugestão até a data da prova ser informada)",
             GABARITO_APOS_PROVA, "Gabarito preliminar (dias depois da prova)",
             RECURSO_GABARITO, "Recurso contra o gabarito (duração)",
             RECURSO_DEMAIS, "Demais recursos (duração)",
@@ -78,14 +78,14 @@ public record Parametros(Map<String, Integer> valores) {
     private static Map<String, Integer> padrao() {
         Map<String, Integer> p = new LinkedHashMap<>();
         p.put(INICIO_INSCRICOES, 1);
-        p.put(DURACAO_INSCRICOES, 31);
+        p.put(DURACAO_INSCRICOES, 41);
         p.put(ISENCAO, 1);
         p.put(PAGAMENTO, 1);
-        p.put(INTERVALO_PROVA, 43);
-        p.put(GABARITO_APOS_PROVA, 15);
+        p.put(INTERVALO_PROVA, 34);
+        p.put(GABARITO_APOS_PROVA, 1);
         p.put(RECURSO_GABARITO, 2);
         p.put(RECURSO_DEMAIS, 1);
-        p.put(RM01_MINIMO, 45);
+        p.put(RM01_MINIMO, 30);
         return java.util.Collections.unmodifiableMap(p);
     }
 }

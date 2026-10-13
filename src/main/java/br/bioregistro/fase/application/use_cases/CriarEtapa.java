@@ -38,6 +38,7 @@ public class CriarEtapa {
         EtapaPreRequisito.exigirExistente(etapas, instituicao, etapa);
         Etapa criada = etapas.salvar(instituicao, etapa);
         espacos.criarParaEtapa(instituicao, faseId, criada.id(), criada.tipoId());
+        espacos.sincronizarResultadoDaFase(instituicao, faseId);
         return EtapaResponse.de(criada);
     }
 }

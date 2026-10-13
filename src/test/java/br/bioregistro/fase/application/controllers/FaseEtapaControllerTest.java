@@ -137,8 +137,18 @@ class FaseEtapaControllerTest {
     void preRequisitoDaEtapaPrecisaExistir() {
         int faseId = criarFase(10, "Objetiva", 1);
         given().contentType(ContentType.JSON).queryParam("faseId", faseId)
-                .body("{\"nome\": \"X\", \"tipoId\": " + PROVA_OBJETIVA + ", \"elegibilidadeEtapaId\": 999}")
+                .body("{\"nome\": \"X\", \"tipoId\": " + PROVA_OBJETIVA
+                        + ", \"elegibilidadeEtapaId\": 999, \"elegibilidadeStatusId\": 3}")
                 .when().post(ETAPAS).then().statusCode(404);
+    }
+
+    @Test
+    void preRequisitoVemComOStatusExigido() {
+        int faseId = criarFase(10, "Objetiva", 1);
+        given().contentType(ContentType.JSON).queryParam("faseId", faseId)
+                .body("{\"nome\": \"X\", \"tipoId\": " + PROVA_OBJETIVA + ", \"elegibilidadeEtapaId\": 999}")
+                .when().post(ETAPAS).then().statusCode(400)
+                .body("message", containsString("status exigido"));
     }
 
     @Test

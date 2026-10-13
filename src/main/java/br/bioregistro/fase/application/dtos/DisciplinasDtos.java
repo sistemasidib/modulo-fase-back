@@ -38,13 +38,13 @@ public final class DisciplinasDtos {
     /**
      * Sem totais: a faixa pode ser de um cargo só, então o total da prova é por cargo
      * (faixas do cargo + faixas de todos os cargos) e quem soma é a tela.
-     * {@code grupoId} é nulo nas fases do modelo antigo, sem grupo.
+     * {@code grupoIds}: os grupos que participam da fase (vazio nas fases do modelo antigo, sem grupo).
      */
-    public record DisciplinasDaEtapaResponse(int etapaId, int faseId, Integer grupoId, List<Integer> cargoIds,
+    public record DisciplinasDaEtapaResponse(int etapaId, int faseId, List<Integer> grupoIds, List<Integer> cargoIds,
                                              List<DisciplinaResponse> disciplinas) {
-        public static DisciplinasDaEtapaResponse de(int etapaId, int faseId, Integer grupoId, List<Integer> cargoIds,
-                                                    List<DisciplinaDaProva> disciplinas) {
-            return new DisciplinasDaEtapaResponse(etapaId, faseId, grupoId, cargoIds,
+        public static DisciplinasDaEtapaResponse de(int etapaId, int faseId, List<Integer> grupoIds,
+                                                    List<Integer> cargoIds, List<DisciplinaDaProva> disciplinas) {
+            return new DisciplinasDaEtapaResponse(etapaId, faseId, grupoIds, cargoIds,
                     disciplinas.stream().map(DisciplinaResponse::de).toList());
         }
     }

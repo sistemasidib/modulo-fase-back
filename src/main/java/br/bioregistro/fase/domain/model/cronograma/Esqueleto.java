@@ -8,8 +8,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Modelo do cronograma: grupos na ordem de exibição e etapas na ordem de cálculo (toda
- * referência aponta para uma etapa anterior na lista).
+ * Modelo do cronograma: grupos e etapas na ordem de exibição. Uma referência pode apontar para
+ * uma etapa posterior na lista (a E14 conta para trás a partir da prova), desde que sem ciclo.
  *
  * @param modulos código → nome curto (S12 → Discursiva)
  * @param atalhos nome → módulos ligados

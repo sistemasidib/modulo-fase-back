@@ -11,6 +11,7 @@ import java.util.List;
  * @param inicio         {@code null} no rascunho
  * @param ativa          módulo ligado e etapa não removida
  * @param alterada       dias ou duração diferentes do modelo (RN21)
+ * @param personalizada  item acrescentado pelo usuário: edita e exclui de verdade, sem modelo
  */
 public record EtapaCalculada(String codigo, String descricao, String grupo, String referencia,
                              String referenciaCodigo, TipoStatus tipoStatus,
@@ -21,5 +22,5 @@ public record EtapaCalculada(String codigo, String descricao, String grupo, Stri
                              boolean ativa, boolean removida, boolean removivel, boolean alterada,
                              boolean diasEditavel, boolean diasTravado, String prazoDias,
                              boolean duracaoTravada, String prazoDuracao,
-                             List<String> avisos) {
+                             List<String> avisos, boolean personalizada) {
 }

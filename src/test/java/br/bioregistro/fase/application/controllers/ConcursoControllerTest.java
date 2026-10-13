@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -142,12 +143,57 @@ class ConcursoControllerTest {
                 .then().body("[0].autor", is("João")).body("[0].origem", is("geração automática"));
     }
 
+    /** Spec 005, RN13b: o concurso só agrupa; o cronograma fica, sem concurso. */
     @Test
-    void concursoComCronogramaNaoPodeSerExcluido() {
+    void concursoComCronogramaPodeSerExcluido() {
         int id = criarConcurso("PM-XX 2027");
-        given().when().post(BASE + "/" + id + "/cronograma").then().statusCode(201);
-        given().when().delete(BASE + "/" + id)
-                .then().statusCode(409).body("message", notNullValue());
+        int cronograma = given().when().post(BASE + "/" + id + "/cronograma").then().statusCode(201)
+                .extract().path("id");
+        given().when().delete(BASE + "/" + id).then().statusCode(204);
+        given().when().get("/v1/idecan/cronogramas/" + cronograma).then().statusCode(200)
+                .body("concursoId", nullValue());
+    }
+
+    /**
+     * Spec 005: os editais seguem o cronograma do concurso; cada um pode se separar com cronograma
+     * próprio; retirar edital do concurso não mexe no cronograma e fora do concurso é 404.
+     */
+    @Test
+    void editaisSeguemOCronogramaDoConcursoEPodemSeSeparar() {
+        int id = criarConcurso("PM-XX 2027");
+        given().when().put(BASE + "/" + id + "/editais/10").then().statusCode(200);
+        given().when().put(BASE + "/" + id + "/editais/11").then().statusCode(200);
+        int compartilhado = given().when().post(BASE + "/" + id + "/cronograma").then().statusCode(201)
+                .extract().path("id");
+        given().when().post(BASE + "/" + id + "/editais/10/cronograma")
+                .then().statusCode(200).body("id", is(compartilhado)).body("criado", is(false));
+        given().when().get("/v1/idecan/cronogramas/" + compartilhado).then().statusCode(200)
+                .body("editalId", nullValue())
+                .body("editais.editalId", contains(10, 11));
+        given().when().get("/v1/idecan/cronogramas/" + compartilhado + "?editalId=10").then().statusCode(200)
+                .body("editalId", is(10))
+                .body("sobreposto", hasSize(0));
+
+        int proprio = given().when().post("/v1/idecan/editais/10/cronograma/separar").then().statusCode(201)
+                .body("criado", is(true)).extract().path("id");
+        given().when().get(BASE + "/" + id).then().statusCode(200)
+                .body("cronogramaId", is(compartilhado))
+                .body("cronogramasDosEditais", hasSize(2))
+                .body("cronogramasDosEditais.find { it.editalId == 10 }.cronogramaId", is(proprio))
+                .body("cronogramasDosEditais.find { it.editalId == 11 }.cronogramaId", is(compartilhado));
+
+        given().contentType(ContentType.JSON).body("{\"cronogramaId\": " + proprio + "}")
+                .when().put("/v1/idecan/editais/11/cronograma").then().statusCode(200).body("id", is(proprio));
+        given().when().delete(BASE + "/" + id + "/editais/10").then().statusCode(200);
+        given().when().delete(BASE + "/" + id + "/editais/10").then().statusCode(404);
+        given().when().get("/v1/idecan/cronogramas/" + proprio + "?editalId=10").then().statusCode(200);
+    }
+
+    @Test
+    void cronogramaProprioDeEditalForaDoConcursoEh400() {
+        int id = criarConcurso("PM-XX 2027");
+        given().when().post(BASE + "/" + id + "/editais/10/cronograma")
+                .then().statusCode(400).body("message", containsString("não está no concurso"));
     }
 
     @Test

@@ -47,13 +47,14 @@ public class ManterConcurso {
         return consulta.resposta(instituicao, concursos.salvar(instituicao, concurso));
     }
 
-    /** Só sem cronograma; os editais voltam a ficar soltos. */
+    /**
+     * O concurso só agrupa editais (spec 005, RN13b): os editais voltam a ficar soltos e continuam
+     * seguindo o cronograma que seguiam, que fica sem concurso.
+     */
     @Transactional
     public void excluir(Instituicao instituicao, int id) {
-        Concurso concurso = ConsultarConcursos.exigir(concursos, instituicao, id);
-        if (cronogramas.idDoConcurso(instituicao, id).isPresent()) {
-            throw new ConflitoException("O concurso " + concurso.nome() + " já tem cronograma e não pode ser excluído.");
-        }
+        ConsultarConcursos.exigir(concursos, instituicao, id);
+        cronogramas.soltarDoConcurso(instituicao, id);
         concursos.excluir(instituicao, id);
     }
 
@@ -74,9 +75,15 @@ public class ManterConcurso {
         return consulta.resposta(instituicao, concurso);
     }
 
+    /** Operação normal (spec 005, RN17): o edital continua seguindo o cronograma que seguia. */
     @Transactional
     public ConcursoResponse retirarEdital(Instituicao instituicao, int id, int editalId) {
         Concurso concurso = ConsultarConcursos.exigir(concursos, instituicao, id);
+        boolean noConcurso = concursos.concursoDoEdital(instituicao, editalId)
+                .map(c -> c.id().equals(id)).orElse(false);
+        if (!noConcurso) {
+            throw new NaoEncontradoException("Edital no concurso " + concurso.nome() + ":", editalId);
+        }
         concursos.retirarEdital(instituicao, id, editalId);
         return consulta.resposta(instituicao, concurso);
     }

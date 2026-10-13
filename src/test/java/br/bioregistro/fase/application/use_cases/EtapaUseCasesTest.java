@@ -52,6 +52,38 @@ class EtapaUseCasesTest {
                 "resultado_preliminar", "resultado_oficial"), espacosDaEtapa(criada.id()));
     }
 
+    private List<String> espacosPropriosDaFase() {
+        return c.publicacoes.listarPorFase(IDECAN, faseId).stream()
+                .filter(p -> p.etapaId() == null).map(p -> p.tipo().valor()).toList();
+    }
+
+    @Test
+    void comUmaUnicaEtapaOResultadoDelaEhODaFase() {
+        assertEquals(List.of("resultado_preliminar", "resultado_oficial"), espacosPropriosDaFase());
+
+        EtapaResponse prova = c.criarEtapa().executar(IDECAN, faseId, etapa("Prova", PROVA_OBJETIVA, null));
+        assertTrue(espacosPropriosDaFase().isEmpty());
+
+        EtapaResponse taf = c.criarEtapa().executar(IDECAN, faseId, etapa("TAF", TAF, null));
+        assertEquals(List.of("resultado_preliminar", "resultado_oficial"), espacosPropriosDaFase());
+
+        c.excluirEtapa().executar(IDECAN, taf.id());
+        assertTrue(espacosPropriosDaFase().isEmpty());
+
+        c.excluirEtapa().executar(IDECAN, prova.id());
+        assertEquals(List.of("resultado_preliminar", "resultado_oficial"), espacosPropriosDaFase());
+    }
+
+    @Test
+    void resultadoDaFaseJaPreenchidoNaoEhRemovido() {
+        Publicacao preliminar = c.publicacoes.listarPorFase(IDECAN, faseId).get(0);
+        c.publicacoes.salvar(IDECAN, preliminar.comDatas(Cenario.ABERTURA, null, null, null, null));
+
+        c.criarEtapa().executar(IDECAN, faseId, etapa("Prova", PROVA_OBJETIVA, null));
+
+        assertEquals(List.of("resultado_preliminar"), espacosPropriosDaFase());
+    }
+
     @Test
     void tafNasceComOsEspacosConfiguradosParaOTipo() {
         EtapaResponse criada = c.criarEtapa().executar(IDECAN, faseId, etapa("TAF", TAF, null));

@@ -9,10 +9,11 @@ import java.util.Set;
 /**
  * Linha do histórico (RN27): só de inclusão. Uma cascata é uma ação com N itens.
  *
- * @param quando {@code null} = agora (preenchido ao gravar)
+ * @param quando   {@code null} = agora (preenchido ao gravar)
+ * @param editalId edital cuja sobreposição mudou; {@code null} = o cronograma compartilhado
  */
 public record Acao(Long id, String autor, OffsetDateTime quando, String acao, String detalhe, String origem,
-                   String justificativa, List<Previa.Item> itens) {
+                   String justificativa, List<Previa.Item> itens, Integer editalId) {
 
     public static final String GERACAO = "geração automática";
     public static final String EDICAO = "edição manual";
@@ -37,11 +38,15 @@ public record Acao(Long id, String autor, OffsetDateTime quando, String acao, St
     }
 
     public static Acao de(String autor, String acao, String detalhe, String origem, List<Previa.Item> itens) {
-        return new Acao(null, autor, null, acao, detalhe, origem, null, itens);
+        return new Acao(null, autor, null, acao, detalhe, origem, null, itens, null);
     }
 
     public Acao comAutor(String novoAutor) {
-        return new Acao(id, novoAutor, quando, acao, detalhe, origem, justificativa, itens);
+        return new Acao(id, novoAutor, quando, acao, detalhe, origem, justificativa, itens, editalId);
+    }
+
+    public Acao doEdital(Integer edital) {
+        return new Acao(id, autor, quando, acao, detalhe, origem, justificativa, itens, edital);
     }
 
     private static String corta(String texto) {

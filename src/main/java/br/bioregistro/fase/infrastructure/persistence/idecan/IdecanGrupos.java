@@ -96,9 +96,14 @@ public class IdecanGrupos {
         FaseGrupoCargos.delete("fase.id", faseId);
     }
 
-    public Optional<Integer> grupoDaFase(int faseId) {
-        return FaseGrupoCargos.<FaseGrupoCargos>find("fase.id", faseId).firstResultOptional()
-                .map(vinculo -> vinculo.grupoCargos.id);
+    public void desvincularFase(int faseId, int grupoId) {
+        FaseGrupoCargos.delete("fase.id = ?1 and grupoCargos.id = ?2", faseId, grupoId);
+    }
+
+    public List<Integer> gruposDaFase(int faseId) {
+        return FaseGrupoCargos.<FaseGrupoCargos>list("fase.id = ?1 order by grupoCargos.id", faseId).stream()
+                .map(vinculo -> vinculo.grupoCargos.id)
+                .toList();
     }
 
     public boolean possuiFases(int grupoId) {

@@ -68,7 +68,7 @@ class FaseUseCasesTest {
     void atualizaMantendoEditalEPermitindoAPropriaOrdem() {
         FaseResponse criada = c.criarFase().executar(IDECAN, 10, fase("Objetiva", 1));
 
-        FaseResponse atualizada = new AtualizarFase(c.fases).executar(IDECAN, criada.id(), fase("Objetiva 2", 1));
+        FaseResponse atualizada = new AtualizarFase(c.fases, c.vinculos).executar(IDECAN, criada.id(), fase("Objetiva 2", 1));
         assertEquals("Objetiva 2", atualizada.nome());
         assertEquals(10, atualizada.editalId());
     }
@@ -79,7 +79,7 @@ class FaseUseCasesTest {
         FaseResponse segunda = c.criarFase().executar(IDECAN, 10, fase("Segunda", 2));
 
         assertThrows(ConflitoException.class,
-                () -> new AtualizarFase(c.fases).executar(IDECAN, segunda.id(), fase("Segunda", 1)));
+                () -> new AtualizarFase(c.fases, c.vinculos).executar(IDECAN, segunda.id(), fase("Segunda", 1)));
     }
 
     @Test
@@ -104,7 +104,7 @@ class FaseUseCasesTest {
     void operacoesEmFaseInexistenteDao404() {
         assertThrows(NaoEncontradoException.class, () -> new BuscarFase(c.fases).executar(IDECAN, 1));
         assertThrows(NaoEncontradoException.class,
-                () -> new AtualizarFase(c.fases).executar(IDECAN, 1, fase("X", 1)));
+                () -> new AtualizarFase(c.fases, c.vinculos).executar(IDECAN, 1, fase("X", 1)));
         assertThrows(NaoEncontradoException.class, () -> c.excluirFase().executar(IDECAN, 1));
     }
 }

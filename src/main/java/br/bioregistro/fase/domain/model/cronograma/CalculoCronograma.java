@@ -5,7 +5,9 @@ import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,8 @@ import java.util.Map;
  *
  * <p>Início = data de referência + dias; fim = início + duração; tudo em dias corridos. Etapas
  * removidas continuam na cadeia, para que as que dependem delas fiquem no mesmo lugar (RN22).
+ * A prova (E15) é âncora quando a data dela é informada; senão é uma sugestão provisória. Nada é
+ * deslocado sozinho: o cálculo só avisa (spec 005, RN09).
  */
 public final class CalculoCronograma {
 
@@ -26,8 +30,8 @@ public final class CalculoCronograma {
     private CalculoCronograma() {
     }
 
-    /** Posições em dias desde o edital. {@code extra} = ajuste da prova ao domingo. */
-    private record Posicoes(Map<String, Integer> inicio, Map<String, Integer> fim, int extra) {
+    /** Posições em dias desde o edital. */
+    private record Posicoes(Map<String, Integer> inicio, Map<String, Integer> fim) {
     }
 
     public static CronogramaCalculado calcular(Esqueleto esqueleto, Parametros parametros, Edicao edicao,
@@ -48,18 +52,31 @@ public final class CalculoCronograma {
                 }
                 etapas.add(calculada);
             }
+            List<ItemPersonalizado> itens = edicao.itens().stream()
+                    .filter(i -> i.grupo().equals(grupo.codigo()))
+                    .sorted(Comparator.comparingInt((ItemPersonalizado i) -> inicioDoItem(i, pos))
+                            .thenComparing(ItemPersonalizado::codigo))
+                    .toList();
+            for (ItemPersonalizado item : itens) {
+                EtapaCalculada calculada = linhaDoItem(item, grupoAtivo, d, pos, prova);
+                if (calculada.ativa()) {
+                    ativas++;
+                }
+                etapas.add(calculada);
+            }
             grupos.add(new CronogramaCalculado.Grupo(grupo.codigo(), grupo.nome(), grupo.fase(), grupo.modulo(),
                     grupo.nota(), grupoAtivo, List.copyOf(etapas)));
         }
 
         int resultado = pos.inicio().get(EtapaModelo.RESULTADO_FINAL);
-        var indicadores = new CronogramaCalculado.Indicadores(ativas, esqueleto.etapas().size(), d,
+        var indicadores = new CronogramaCalculado.Indicadores(ativas,
+                esqueleto.etapas().size() + edicao.itens().size(), d,
                 prova, data(d, prova), resultado, data(d, resultado));
-        return new CronogramaCalculado(d != null, d, pos.extra(), List.copyOf(grupos), indicadores,
+        return new CronogramaCalculado(d != null, d, edicao.provaInformada(), List.copyOf(grupos), indicadores,
                 checagens(parametros, edicao, pos, hoje));
     }
 
-    /** RN20: efeito de uma edição de célula, sem gravar. */
+    /** RN20: efeito de uma edição de célula, sem gravar. As dependentes se movem em cascata. */
     public static Previa prever(Esqueleto esqueleto, Parametros parametros, Edicao edicao, Mudanca mudanca) {
         EtapaModelo etapa = esqueleto.etapa(mudanca.codigo());
         boolean dias = mudanca.campo() == Mudanca.Campo.DIAS;
@@ -72,19 +89,6 @@ public final class CalculoCronograma {
                 String.valueOf(antes), String.valueOf(mudanca.valor())));
 
         Posicoes a = posicoes(esqueleto, parametros, edicao);
-        if (mudanca.modo() == Mudanca.Modo.SO_ESTA) {
-            Posicoes b = posicoes(esqueleto, parametros, nova);
-            for (EtapaModelo dependente : esqueleto.etapas()) {
-                int delta = deslocamento(dependente.referencia(), etapa.codigo(), a, b);
-                if (delta != 0 && esqueleto.grupo(dependente.grupo()).ativo(edicao.modulos())) {
-                    int velho = diasAtuais(dependente, parametros, nova);
-                    nova = comValor(nova, dependente, parametros, true, velho - delta);
-                    itens.add(new Previa.Item(dependente.codigo(), "dias (compensado)",
-                            String.valueOf(velho), String.valueOf(velho - delta)));
-                }
-            }
-        }
-
         Posicoes b = posicoes(esqueleto, parametros, nova);
         int movidas = 0;
         for (EtapaModelo outra : esqueleto.etapas()) {
@@ -100,60 +104,75 @@ public final class CalculoCronograma {
                         rotulo(edicao.dataEdital(), de), rotulo(edicao.dataEdital(), para)));
             }
         }
+        for (ItemPersonalizado item : edicao.itens()) {
+            int de = inicioDoItem(item, a);
+            int para = inicioDoItem(item, b);
+            if (de != para && esqueleto.grupo(item.grupo()).ativo(edicao.modulos())) {
+                movidas++;
+                itens.add(new Previa.Item(item.codigo(), edicao.dataEdital() != null ? "data" : "início",
+                        rotulo(edicao.dataEdital(), de), rotulo(edicao.dataEdital(), para)));
+            }
+        }
         return new Previa(nova, List.copyOf(itens), movidas);
     }
 
     // ── cadeia ────────────────────────────────────────────────────────────────
 
     private static Posicoes posicoes(Esqueleto esqueleto, Parametros parametros, Edicao edicao) {
-        Posicoes sem = cadeia(esqueleto, parametros, edicao, 0);
-        if (edicao.dataEdital() == null) {
-            return sem;
-        }
-        LocalDate prova = edicao.dataEdital().plusDays(sem.inicio().get(EtapaModelo.PROVA));
-        int extra = (7 - prova.getDayOfWeek().getValue() % 7) % 7;
-        return extra == 0 ? sem : cadeia(esqueleto, parametros, edicao, extra);
-    }
-
-    private static Posicoes cadeia(Esqueleto esqueleto, Parametros parametros, Edicao edicao, int extraProva) {
         Map<String, Integer> inicio = new HashMap<>();
         Map<String, Integer> fim = new HashMap<>();
-        for (EtapaModelo etapa : esqueleto.etapas()) {
-            Referencia ref = etapa.referencia();
-            int base = switch (ref.tipo()) {
-                case MARCO_ZERO -> 0;
-                case INICIO -> inicio.get(ref.codigo());
-                case FIM -> fim.get(ref.codigo());
-                case ULTIMO_RESULTADO -> ultimoResultado(esqueleto, edicao, inicio);
-            };
-            int dias = diasAtuais(etapa, parametros, edicao);
-            if (etapa.codigo().equals(EtapaModelo.PROVA)) {
-                dias += extraProva;
+        List<EtapaModelo> pendentes = new ArrayList<>(esqueleto.etapas());
+        while (!pendentes.isEmpty()) {
+            int antes = pendentes.size();
+            for (var it = pendentes.iterator(); it.hasNext(); ) {
+                EtapaModelo etapa = it.next();
+                Referencia ref = etapa.referencia();
+                Integer base = switch (ref.tipo()) {
+                    case MARCO_ZERO -> 0;
+                    case INICIO -> inicio.get(ref.codigo());
+                    case FIM -> fim.get(ref.codigo());
+                    case ULTIMO_RESULTADO -> ultimoResultado(esqueleto, edicao, inicio);
+                };
+                if (base == null) {
+                    continue;
+                }
+                int comeco = etapa.codigo().equals(EtapaModelo.PROVA) && edicao.provaInformada()
+                        ? provaInformada(edicao)
+                        : base + diasAtuais(etapa, parametros, edicao);
+                inicio.put(etapa.codigo(), comeco);
+                fim.put(etapa.codigo(), comeco + duracaoAtual(etapa, parametros, edicao));
+                it.remove();
             }
-            int comeco = base + dias;
-            inicio.put(etapa.codigo(), comeco);
-            fim.put(etapa.codigo(), comeco + duracaoAtual(etapa, parametros, edicao));
+            if (pendentes.size() == antes) {
+                throw new IllegalStateException("Referência circular no esqueleto " + esqueleto.nome() + ": "
+                        + pendentes.stream().map(EtapaModelo::codigo).toList());
+            }
         }
-        return new Posicoes(inicio, fim, extraProva);
+        return new Posicoes(inicio, fim);
     }
 
-    private static int ultimoResultado(Esqueleto esqueleto, Edicao edicao, Map<String, Integer> inicio) {
-        return esqueleto.etapas().stream()
-                .filter(EtapaModelo::resultadoFinal)
-                .filter(e -> esqueleto.grupo(e.grupo()).ativo(edicao.modulos()))
-                .mapToInt(e -> inicio.get(e.codigo()))
-                .max().orElse(0);
+    private static int provaInformada(Edicao edicao) {
+        return (int) ChronoUnit.DAYS.between(edicao.dataEdital(), edicao.dataProva());
     }
 
-    private static int deslocamento(Referencia ref, String codigo, Posicoes a, Posicoes b) {
-        if (!codigo.equals(ref.codigo())) {
-            return 0;
-        }
+    private static int base(Referencia ref, Posicoes pos) {
         return switch (ref.tipo()) {
-            case INICIO -> b.inicio().get(codigo) - a.inicio().get(codigo);
-            case FIM -> b.fim().get(codigo) - a.fim().get(codigo);
+            case INICIO -> pos.inicio().get(ref.codigo());
+            case FIM -> pos.fim().get(ref.codigo());
             default -> 0;
         };
+    }
+
+    /** {@code null} enquanto algum resultado definitivo ativo ainda não foi calculado. */
+    private static Integer ultimoResultado(Esqueleto esqueleto, Edicao edicao, Map<String, Integer> inicio) {
+        List<EtapaModelo> resultados = esqueleto.etapas().stream()
+                .filter(EtapaModelo::resultadoFinal)
+                .filter(e -> esqueleto.grupo(e.grupo()).ativo(edicao.modulos()))
+                .toList();
+        if (resultados.stream().anyMatch(e -> !inicio.containsKey(e.codigo()))) {
+            return null;
+        }
+        return resultados.stream().mapToInt(e -> inicio.get(e.codigo())).max().orElse(0);
     }
 
     // ── valores atuais e travas ───────────────────────────────────────────────
@@ -178,6 +197,10 @@ public final class CalculoCronograma {
         }
         if (dias && !etapa.temDias()) {
             throw new RegraDeNegocioException("A etapa " + etapa.codigo() + " é o marco zero e não tem dias.");
+        }
+        if (dias && etapa.codigo().equals(EtapaModelo.PROVA) && edicao.provaInformada()) {
+            throw new RegraDeNegocioException("A prova tem data informada (" + edicao.dataProva().format(DATA)
+                    + "). Mude a data da prova.");
         }
         if (!dias && valor < 0) {
             throw new RegraDeNegocioException("A duração não pode ser negativa.");
@@ -210,26 +233,23 @@ public final class CalculoCronograma {
         LocalDate d = edicao.dataEdital();
         boolean removida = edicao.removidas().contains(codigo);
         boolean ativa = grupoAtivo && !removida;
-        int dias = diasAtuais(etapa, parametros, edicao);
+        boolean ehProva = codigo.equals(EtapaModelo.PROVA);
         int duracao = duracaoAtual(etapa, parametros, edicao);
         int inicio = pos.inicio().get(codigo);
         int fim = pos.fim().get(codigo);
+        int dias = ehProva && edicao.provaInformada()
+                ? inicio - base(etapa.referencia(), pos)
+                : diasAtuais(etapa, parametros, edicao);
         Edicao.Ajuste ajuste = edicao.ajuste(codigo);
 
         List<String> avisos = new ArrayList<>();
         if (d != null && ativa) {
-            if (codigo.equals(EtapaModelo.PROVA)) {
-                if (pos.extra() > 0) {
-                    avisos.add("+" + dias(pos.extra()) + " para cair no domingo (automático)");
+            if (ehProva) {
+                if (!edicao.provaInformada()) {
+                    avisos.add("data provisória · informe a data da prova");
                 }
             } else {
-                LocalDate data = d.plusDays(inicio);
-                DayOfWeek dia = data.getDayOfWeek();
-                if (dia == DayOfWeek.SATURDAY || dia == DayOfWeek.SUNDAY) {
-                    LocalDate segunda = data.plusDays(dia == DayOfWeek.SATURDAY ? 2 : 1);
-                    avisos.add("cai em " + DIA_SEMANA[dia.getValue() - 1] + " · ajusta para segunda "
-                            + segunda.format(DIA_MES));
-                }
+                avisoDeFimDeSemana(d, inicio, avisos);
             }
         }
         if (ativa && etapa.temFaixa() && etapa.temDias() && (dias < etapa.faixaP25() || dias > etapa.faixaP75())) {
@@ -243,7 +263,37 @@ public final class CalculoCronograma {
                 inicio, fim, inicio - prova, data(d, inicio), data(d, fim),
                 ativa, removida, etapa.removivel(), ajuste != null && !removida,
                 etapa.temDias(), travado(etapa.parametroDias(), edicao), etapa.parametroDias(),
-                travado(etapa.parametroDuracao(), edicao), etapa.parametroDuracao(), List.copyOf(avisos));
+                travado(etapa.parametroDuracao(), edicao), etapa.parametroDuracao(), List.copyOf(avisos), false);
+    }
+
+    private static int inicioDoItem(ItemPersonalizado item, Posicoes pos) {
+        return base(item.referencia(), pos) + item.dias();
+    }
+
+    /** Sem modelo nem faixa: os valores do item são os do usuário. */
+    private static EtapaCalculada linhaDoItem(ItemPersonalizado item, boolean grupoAtivo, LocalDate d, Posicoes pos,
+                                              int prova) {
+        int inicio = inicioDoItem(item, pos);
+        int fim = inicio + item.duracao();
+        List<String> avisos = new ArrayList<>();
+        if (d != null && grupoAtivo) {
+            avisoDeFimDeSemana(d, inicio, avisos);
+        }
+        Referencia ref = item.referencia();
+        return new EtapaCalculada(item.codigo(), item.descricao(), item.grupo(), ref.texto(), ref.codigo(),
+                item.tipoStatus(), item.dias(), item.dias(), null, null, item.duracao(), item.duracao(),
+                inicio, fim, inicio - prova, data(d, inicio), data(d, fim),
+                grupoAtivo, false, true, false,
+                true, false, null, false, null, List.copyOf(avisos), true);
+    }
+
+    private static void avisoDeFimDeSemana(LocalDate edital, int inicio, List<String> avisos) {
+        LocalDate data = edital.plusDays(inicio);
+        DayOfWeek dia = data.getDayOfWeek();
+        if (dia == DayOfWeek.SATURDAY || dia == DayOfWeek.SUNDAY) {
+            LocalDate segunda = data.plusDays(dia == DayOfWeek.SATURDAY ? 2 : 1);
+            avisos.add("cai em " + DIA_SEMANA[dia.getValue() - 1] + " · ajusta para segunda " + segunda.format(DIA_MES));
+        }
     }
 
     private static CronogramaCalculado.Checagens checagens(Parametros parametros, Edicao edicao, Posicoes pos,
@@ -256,18 +306,19 @@ public final class CalculoCronograma {
                 intervalo >= minimo, dias(intervalo)));
 
         LocalDate d = edicao.dataEdital();
-        itens.add(new CronogramaCalculado.Checagem("EDITAL_NO_PRAZO",
-                "A data do edital não pode ser anterior a hoje",
+        List<CronogramaCalculado.Checagem> alertas = new ArrayList<>();
+        alertas.add(new CronogramaCalculado.Checagem("EDITAL_NO_PRAZO",
+                "Data do edital no passado (publicado, reprogramado ou retificado?)",
                 d == null || !d.isBefore(hoje),
                 d == null ? "sem data do edital (rascunho)" : d.format(DATA)));
-
-        LocalDate prova = data(d, pos.inicio().get(EtapaModelo.PROVA));
-        itens.add(new CronogramaCalculado.Checagem("PROVA_DOMINGO", "Prova objetiva em domingo",
-                prova == null || prova.getDayOfWeek() == DayOfWeek.SUNDAY,
-                prova == null ? "ajustada ao informar o edital" : "ajuste automático de +" + dias(pos.extra())));
+        alertas.add(new CronogramaCalculado.Checagem("PROVA_INFORMADA", "Data da prova objetiva informada",
+                d == null || edicao.provaInformada(),
+                edicao.provaInformada()
+                        ? edicao.dataProva().format(DATA) + " · " + DIA_SEMANA[edicao.dataProva().getDayOfWeek().getValue() - 1]
+                        : "sugestão provisória"));
 
         boolean viola = itens.stream().anyMatch(c -> !c.cumprida());
-        return new CronogramaCalculado.Checagens(viola, List.copyOf(itens));
+        return new CronogramaCalculado.Checagens(viola, List.copyOf(itens), List.copyOf(alertas));
     }
 
     private static LocalDate data(LocalDate edital, int deslocamento) {

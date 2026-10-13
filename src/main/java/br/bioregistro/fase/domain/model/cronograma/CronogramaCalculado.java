@@ -7,9 +7,9 @@ import java.util.Optional;
 /**
  * Resultado do {@link CalculoCronograma}: grupos na ordem do esqueleto, indicadores e checagens.
  *
- * @param ajusteDomingo dias somados à prova para cair no domingo (RN14); 0 no rascunho
+ * @param provaInformada a E15 vem da data da prova informada; {@code false} = sugestão provisória
  */
-public record CronogramaCalculado(boolean materializado, LocalDate dataEdital, int ajusteDomingo,
+public record CronogramaCalculado(boolean materializado, LocalDate dataEdital, boolean provaInformada,
                                   List<Grupo> grupos, Indicadores indicadores, Checagens checagens) {
 
     public record Grupo(String codigo, String nome, boolean fase, String modulo, String nota, boolean ativo,
@@ -23,8 +23,11 @@ public record CronogramaCalculado(boolean materializado, LocalDate dataEdital, i
     public record Checagem(String codigo, String descricao, boolean cumprida, String detalhe) {
     }
 
-    /** RN24: "o cronograma viola alguma restrição?" */
-    public record Checagens(boolean viola, List<Checagem> itens) {
+    /**
+     * RN24: "o cronograma viola alguma restrição?". Só {@code itens} contam para {@code viola} e
+     * pedem justificativa; {@code alertas} só informam (spec 005, RN08 e RN09).
+     */
+    public record Checagens(boolean viola, List<Checagem> itens, List<Checagem> alertas) {
     }
 
     public List<EtapaCalculada> etapas() {

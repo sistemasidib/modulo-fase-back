@@ -51,6 +51,10 @@ public class Sql {
         return new TypedParameterValue<>(StandardBasicTypes.INTEGER, valor);
     }
 
+    public static TypedParameterValue<Boolean> booleano(Boolean valor) {
+        return new TypedParameterValue<>(StandardBasicTypes.BOOLEAN, valor);
+    }
+
     public static TypedParameterValue<String> texto(String valor) {
         return new TypedParameterValue<>(StandardBasicTypes.STRING, valor);
     }

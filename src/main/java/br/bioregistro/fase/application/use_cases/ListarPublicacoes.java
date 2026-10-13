@@ -10,16 +10,19 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/** Publicações da fase e das etapas dela. */
+/** Publicações da fase e das etapas dela; as vinculadas ao cronograma vêm com as datas dele. */
 @ApplicationScoped
 public class ListarPublicacoes {
 
     private final FaseRepository fases;
     private final PublicacaoRepository publicacoes;
+    private final PublicacoesDoCronograma doCronograma;
 
-    public ListarPublicacoes(FaseRepository fases, PublicacaoRepository publicacoes) {
+    public ListarPublicacoes(FaseRepository fases, PublicacaoRepository publicacoes,
+                             PublicacoesDoCronograma doCronograma) {
         this.fases = fases;
         this.publicacoes = publicacoes;
+        this.doCronograma = doCronograma;
     }
 
     public List<PublicacaoResponse> executar(Instituicao instituicao, int faseId) {
@@ -27,7 +30,7 @@ public class ListarPublicacoes {
             throw new NaoEncontradoException("Fase", faseId);
         }
         OffsetDateTime agora = OffsetDateTime.now();
-        return publicacoes.listarPorFase(instituicao, faseId).stream()
+        return doCronograma.comDatas(instituicao, faseId, publicacoes.listarPorFase(instituicao, faseId)).stream()
                 .map(p -> PublicacaoResponse.de(p, agora))
                 .toList();
     }

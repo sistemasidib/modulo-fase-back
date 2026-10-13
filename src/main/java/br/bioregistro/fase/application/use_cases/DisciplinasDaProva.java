@@ -19,11 +19,10 @@ import jakarta.transaction.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Disciplinas de uma prova (etapa): as faixas de questões amarradas à etapa que valem para algum
- * cargo do grupo da fase, e o valor de cada questão. Na prova objetiva entram também as faixas
+ * cargo dos grupos que participam da fase, e o valor de cada questão. Na prova objetiva entram também as faixas
  * antigas, cadastradas sem etapa.
  */
 @ApplicationScoped
@@ -94,7 +93,7 @@ public class DisciplinasDaProva {
     private final class Prova {
         final Etapa etapa;
         final Fase fase;
-        final Optional<Integer> grupoId;
+        final List<Integer> grupoIds;
         final List<Integer> cargos;
         final List<DisciplinaDaProva> faixas;
 
@@ -102,8 +101,8 @@ public class DisciplinasDaProva {
             etapa = etapas.buscar(instituicao, etapaId).orElseThrow(() -> new NaoEncontradoException("Etapa", etapaId));
             fase = fases.buscar(instituicao, etapa.faseId())
                     .orElseThrow(() -> new NaoEncontradoException("Fase", etapa.faseId()));
-            grupoId = grupos.grupoDaFase(instituicao, fase.id());
-            cargos = grupoId.map(g -> grupos.cargosDoGrupo(instituicao, g)).orElse(List.of());
+            grupoIds = grupos.gruposDaFase(instituicao, fase.id());
+            cargos = grupoIds.stream().flatMap(g -> grupos.cargosDoGrupo(instituicao, g).stream()).distinct().toList();
             boolean objetiva = tipos.tipoEtapa(instituicao, etapa.tipoId())
                     .map(t -> PROVA_OBJETIVA.equals(t.valor())).orElse(false);
             faixas = disciplinas.daEtapa(instituicao, fase.editalId(), etapaId, objetiva).stream()
@@ -113,20 +112,20 @@ public class DisciplinasDaProva {
 
         List<Integer> cargosEscolhidos(List<Integer> pedidos) {
             if (cargos.isEmpty()) {
-                throw new RegraDeNegocioException("Inclua cargos no grupo desta fase antes de cadastrar disciplinas.");
+                throw new RegraDeNegocioException("Inclua grupos com cargos nesta fase antes de cadastrar disciplinas.");
             }
             if (pedidos == null || pedidos.isEmpty()) {
                 return cargos;
             }
             List<Integer> escolhidos = pedidos.stream().distinct().toList();
             if (!cargos.containsAll(escolhidos)) {
-                throw new RegraDeNegocioException("Escolha só cargos do grupo desta fase.");
+                throw new RegraDeNegocioException("Escolha só cargos dos grupos desta fase.");
             }
             return escolhidos;
         }
 
         DisciplinasDaEtapaResponse resposta() {
-            return DisciplinasDaEtapaResponse.de(etapa.id(), fase.id(), grupoId.orElse(null), cargos, faixas);
+            return DisciplinasDaEtapaResponse.de(etapa.id(), fase.id(), grupoIds, cargos, faixas);
         }
     }
 }

@@ -8,6 +8,7 @@ import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 import static br.bioregistro.fase.application.use_cases.Cenario.etapa;
@@ -48,7 +49,7 @@ class PublicacaoUseCasesTest {
     @Test
     void publicarGabaritoPreliminarAbreORecursoNoPeriodoInformado() {
         OffsetDateTime agora = OffsetDateTime.now();
-        PublicacaoResponse publicada = new PublicarPublicacao(c.publicacoes).executar(IDECAN,
+        PublicacaoResponse publicada = new PublicarPublicacao(c.publicacoes, c.doCronograma()).executar(IDECAN,
                 espaco("gabarito_preliminar"),
                 datas(agora.minusDays(1), agora.plusDays(30), agora.minusHours(1), agora.plusDays(8)));
 
@@ -59,14 +60,14 @@ class PublicacaoUseCasesTest {
     @Test
     void gabaritoPreliminarExigePeriodoDeRecursoAoPublicar() {
         OffsetDateTime agora = OffsetDateTime.now();
-        assertThrows(RegraDeNegocioException.class, () -> new PublicarPublicacao(c.publicacoes)
+        assertThrows(RegraDeNegocioException.class, () -> new PublicarPublicacao(c.publicacoes, c.doCronograma())
                 .executar(IDECAN, espaco("gabarito_preliminar"), datas(agora, agora.plusDays(30), null, null)));
     }
 
     @Test
     void localDeProvaNaoAceitaPeriodoDeRecurso() {
         OffsetDateTime agora = OffsetDateTime.now();
-        assertThrows(RegraDeNegocioException.class, () -> new PublicarPublicacao(c.publicacoes)
+        assertThrows(RegraDeNegocioException.class, () -> new PublicarPublicacao(c.publicacoes, c.doCronograma())
                 .executar(IDECAN, espaco("local_prova"),
                         datas(agora, agora.plusDays(30), agora, agora.plusDays(2))));
     }
@@ -74,25 +75,38 @@ class PublicacaoUseCasesTest {
     @Test
     void datasSaoPreenchidasManualmenteAntesDePublicar() {
         OffsetDateTime prevista = OffsetDateTime.parse("2026-10-11T09:00:00-03:00");
-        PublicacaoResponse atualizada = new AtualizarPublicacao(c.publicacoes).executar(IDECAN,
+        PublicacaoResponse atualizada = new AtualizarPublicacao(c.publicacoes, c.doCronograma()).executar(IDECAN,
                 espaco("local_prova"), new PublicacaoDatasRequest(prevista, null, null, null, null));
 
         assertEquals(prevista, atualizada.dataPrevista());
         assertNull(atualizada.publicadaEm());
     }
 
+    /** Spec 005: depois do fim do legado, edital sem cronograma não aceita data digitada. */
+    @Test
+    void depoisDoFimDoLegadoEditalSemCronogramaNaoAceitaDataDigitada() {
+        OffsetDateTime prevista = OffsetDateTime.parse("2026-10-11T09:00:00-03:00");
+        PublicacaoDatasRequest datas = new PublicacaoDatasRequest(prevista, null, null, null, null);
+        int local = espaco("local_prova");
+
+        assertThrows(ConflitoException.class, () -> new AtualizarPublicacao(c.publicacoes,
+                c.doCronograma(LocalDate.of(2026, 10, 1))).executar(IDECAN, local, datas));
+        assertEquals(prevista, new AtualizarPublicacao(c.publicacoes, c.doCronograma(LocalDate.of(2026, 10, 10)))
+                .executar(IDECAN, local, datas).dataPrevista());
+    }
+
     @Test
     void naoExcluiPublicacaoJaPublicada() {
         OffsetDateTime agora = OffsetDateTime.now();
         int local = espaco("local_prova");
-        new PublicarPublicacao(c.publicacoes).executar(IDECAN, local, datas(agora, agora.plusDays(30), null, null));
+        new PublicarPublicacao(c.publicacoes, c.doCronograma()).executar(IDECAN, local, datas(agora, agora.plusDays(30), null, null));
 
-        assertThrows(ConflitoException.class, () -> new ExcluirPublicacao(c.publicacoes).executar(IDECAN, local));
+        assertThrows(ConflitoException.class, () -> new ExcluirPublicacao(c.publicacoes, c.doCronograma()).executar(IDECAN, local));
     }
 
     @Test
     void criaEspacoExtraNaFaseOuNaEtapa() {
-        CriarPublicacao criar = new CriarPublicacao(c.fases, c.etapas, c.tipos, c.publicacoes);
+        CriarPublicacao criar = new CriarPublicacao(c.fases, c.etapas, c.tipos, c.publicacoes, c.vinculos);
 
         PublicacaoResponse daFase = criar.executar(IDECAN, faseId, new CriarPublicacaoRequest(LOCAL_PROVA.id(), null));
         PublicacaoResponse daEtapa =
@@ -105,7 +119,7 @@ class PublicacaoUseCasesTest {
     @Test
     void etapaDoEspacoExtraPrecisaSerDaFase() {
         int outraFase = c.criarFase().executar(IDECAN, 10, fase("Outra", 2)).id();
-        CriarPublicacao criar = new CriarPublicacao(c.fases, c.etapas, c.tipos, c.publicacoes);
+        CriarPublicacao criar = new CriarPublicacao(c.fases, c.etapas, c.tipos, c.publicacoes, c.vinculos);
 
         assertThrows(RegraDeNegocioException.class, () -> criar.executar(IDECAN, outraFase,
                 new CriarPublicacaoRequest(LOCAL_PROVA.id(), etapaId)));

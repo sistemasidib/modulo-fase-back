@@ -32,7 +32,7 @@ public class CriarFase {
             throw new ConflitoException("Já existe uma fase com a ordem " + fase.ordem() + " neste edital.");
         }
         Fase criada = fases.salvar(instituicao, fase);
-        espacos.criarParaFase(instituicao, criada.id());
+        espacos.sincronizarResultadoDaFase(instituicao, criada.id());
         return FaseResponse.de(criada);
     }
 }

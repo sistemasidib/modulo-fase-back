@@ -15,6 +15,7 @@ public class TiposEmMemoria implements TipoRepository {
     public static final int PROVA_OBJETIVA = 1;
     public static final int TAF = 2;
     public static final int ANALISE_PCD = 3;
+    public static final int PROVA_DISCURSIVA = 4;
 
     static final TipoPublicacao LOCAL_PROVA = new TipoPublicacao(1, "local_prova", "Local de prova", false);
     static final TipoPublicacao GABARITO_PRELIMINAR =
@@ -29,14 +30,16 @@ public class TiposEmMemoria implements TipoRepository {
     private static final List<TipoEtapa> TIPOS_ETAPA = List.of(
             new TipoEtapa(PROVA_OBJETIVA, "prova_objetiva", "Prova objetiva"),
             new TipoEtapa(TAF, "taf", "Teste de aptidão física (TAF)"),
-            new TipoEtapa(ANALISE_PCD, "analise_pcd", "Análise de solicitações: PcD"));
+            new TipoEtapa(ANALISE_PCD, "analise_pcd", "Análise de solicitações: PcD"),
+            new TipoEtapa(PROVA_DISCURSIVA, "prova_discursiva", "Prova discursiva"));
 
     private static final List<TipoPublicacao> TIPOS_PUBLICACAO =
             List.of(LOCAL_PROVA, GABARITO_PRELIMINAR, GABARITO_DEFINITIVO, RESULTADO_PRELIMINAR, RESULTADO_OFICIAL);
 
     private static final Map<Integer, List<TipoPublicacao>> PADRAO = Map.of(
             PROVA_OBJETIVA, TIPOS_PUBLICACAO,
-            TAF, List.of(RESULTADO_PRELIMINAR, RESULTADO_OFICIAL));
+            TAF, List.of(RESULTADO_PRELIMINAR, RESULTADO_OFICIAL),
+            PROVA_DISCURSIVA, List.of(RESULTADO_PRELIMINAR, RESULTADO_OFICIAL));
 
     @Override
     public List<TipoEtapa> tiposEtapa(Instituicao instituicao) {

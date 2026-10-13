@@ -20,15 +20,18 @@ import java.time.OffsetDateTime;
 public class PublicarPublicacao {
 
     private final PublicacaoRepository publicacoes;
+    private final PublicacoesDoCronograma doCronograma;
 
-    public PublicarPublicacao(PublicacaoRepository publicacoes) {
+    public PublicarPublicacao(PublicacaoRepository publicacoes, PublicacoesDoCronograma doCronograma) {
         this.publicacoes = publicacoes;
+        this.doCronograma = doCronograma;
     }
 
     @Transactional
     public PublicacaoResponse executar(Instituicao instituicao, int id, PublicacaoDatasRequest datas) {
         Publicacao atual = publicacoes.buscar(instituicao, id)
                 .orElseThrow(() -> new NaoEncontradoException("Publicação", id));
+        doCronograma.exigirDatasManuais(instituicao, atual);
         OffsetDateTime agora = OffsetDateTime.now();
         OffsetDateTime dataPrevista = datas.dataPrevista() != null ? datas.dataPrevista() : atual.dataPrevista();
         Publicacao publicada = atual

@@ -46,6 +46,17 @@ public record Publicacao(
                 recursoInicio, recursoFim, publicadaEm);
     }
 
+    /**
+     * Publicação vinculada ao cronograma (spec 005): as datas e o "publicada" são os do cronograma,
+     * não os das colunas próprias, que ficam vazias.
+     */
+    public Publicacao comDatasDoCronograma(OffsetDateTime dataPrevista, OffsetDateTime visualizacaoInicio,
+                                           OffsetDateTime visualizacaoFim, OffsetDateTime recursoInicio,
+                                           OffsetDateTime recursoFim, OffsetDateTime publicadaEm) {
+        return new Publicacao(id, faseId, etapaId, tipo, dataPrevista, visualizacaoInicio, visualizacaoFim,
+                tipo.abreRecurso() ? recursoInicio : null, tipo.abreRecurso() ? recursoFim : null, publicadaEm);
+    }
+
     /** Publicar abre o recurso: a partir daqui ele fica aberto dentro do período informado. */
     public Publicacao publicar(OffsetDateTime agora) {
         if (publicada()) {

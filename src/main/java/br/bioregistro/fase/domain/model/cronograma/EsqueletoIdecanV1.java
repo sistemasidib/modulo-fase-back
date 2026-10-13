@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static br.bioregistro.fase.domain.model.cronograma.Parametros.DURACAO_INSCRICOES;
@@ -17,9 +18,11 @@ import static br.bioregistro.fase.domain.model.cronograma.Parametros.RECURSO_GAB
 
 /**
  * Esqueleto IDECAN v1 (protótipo de 08/10/2026, {@code .speckit/nova regra/}), com os ajustes da
- * spec 003: Fase 1 = prova objetiva (RN06), gabarito = prova + 15 (RN15) e recurso do gabarito
- * aberto no dia da publicação por 2 dias (RN16). E16 e E17 ficam sem faixa histórica porque a
- * regra nova substitui o histórico.
+ * spec 003: Fase 1 = prova objetiva (RN06), gabarito = prova + parâmetro (RN15) e recurso do
+ * gabarito aberto no dia da publicação por 2 dias (RN16). E16 e E17 ficam sem faixa histórica.
+ *
+ * <p>E14 e E15 recalibradas com 127 editais IDECAN de 2018–2026 (out/2026): locais de prova 9 dias
+ * antes da prova; fim das inscrições → prova com P25–P75 de 27–40 dias.
  */
 public final class EsqueletoIdecanV1 {
 
@@ -32,6 +35,7 @@ public final class EsqueletoIdecanV1 {
     private static final Pattern RECURSO = Pattern.compile(
             "^(Período para interposição|Prazo para interposição|Interposição|Período para impugnação)");
     private static final Pattern PUBLICACAO = Pattern.compile("^(Publicação|Divulgação|Edital|Convocação|Resultado)");
+    private static final Pattern FAIXA = Pattern.compile("(-?\\d+)-(-?\\d+)");
 
     public static final Esqueleto ESQUELETO = criar();
 
@@ -75,8 +79,8 @@ public final class EsqueletoIdecanV1 {
         e.add(etapa("E13", "Divulgação do resultado definitivo de inscrição (Atendimento Especial)", g, Referencia.fim("E12"), 8, "6-12", 0, 64));
 
         g = F1_PROVA_OBJETIVA;
-        e.add(etapa("E14", "Divulgação dos locais de prova", g, Referencia.fim("E04"), 35, "25-44", 0, 58));
-        e.add(etapa("E15", "Realização das Provas Objetivas", g, Referencia.fim("E04"), 43, "34-55", 0, 75)
+        e.add(etapa("E14", "Divulgação dos locais de prova", g, Referencia.inicio("E15"), -9, "-9--9", 0, 114));
+        e.add(etapa("E15", "Realização das Provas Objetivas", g, Referencia.fim("E04"), 34, "27-40", 0, 124)
                 .comParametros(INTERVALO_PROVA, null));
         e.add(etapa("E16", "Publicação dos gabaritos preliminares das provas objetivas", g, Referencia.inicio("E15"), 15, null, 0, 63)
                 .comParametros(GABARITO_APOS_PROVA, null));
@@ -203,9 +207,12 @@ public final class EsqueletoIdecanV1 {
             Integer p25 = null;
             Integer p75 = null;
             if (faixa != null) {
-                String[] partes = faixa.split("-");
-                p25 = Integer.valueOf(partes[0]);
-                p75 = Integer.valueOf(partes[1]);
+                Matcher m = FAIXA.matcher(faixa);
+                if (!m.matches()) {
+                    throw new IllegalArgumentException("Faixa inválida em " + codigo + ": " + faixa);
+                }
+                p25 = Integer.valueOf(m.group(1));
+                p75 = Integer.valueOf(m.group(2));
             }
             return new EtapaModelo(codigo, descricao, grupo, referencia, dias, p25, p75, duracao, base, tipo,
                     parametroDias, duracaoParametro, resultadoFinal);

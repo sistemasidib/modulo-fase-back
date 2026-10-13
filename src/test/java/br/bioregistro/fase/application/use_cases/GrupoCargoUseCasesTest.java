@@ -42,7 +42,7 @@ class GrupoCargoUseCasesTest {
     }
 
     private static GerarFasesRequest pedido(String faseNome, Integer... tipos) {
-        List<EtapaGerada> etapas = java.util.Arrays.stream(tipos).map(t -> new EtapaGerada(t, null)).toList();
+        List<EtapaGerada> etapas = java.util.Arrays.stream(tipos).map(t -> new EtapaGerada(t, null, null)).toList();
         return new GerarFasesRequest(List.of(new FaseGerada(faseNome, null, ABERTURA, FECHAMENTO, etapas)));
     }
 
@@ -120,6 +120,17 @@ class GrupoCargoUseCasesTest {
         assertEquals(List.of(fase.fase().id()),
                 new ListarFasesDoGrupo(c.fases, c.grupos).executar(IDECAN, medio).stream()
                         .map(FaseResponse::id).toList());
+    }
+
+    @Test
+    void faseDeUmaSoEtapaNaoRepeteOResultado() {
+        int medio = grupo("Nível médio");
+        adicionar(medio, 101);
+
+        FaseGeradaResponse fase = c.gerarFases().executar(IDECAN, medio, pedido("Fase 1", PROVA_OBJETIVA)).get(0);
+
+        // só os 5 da prova objetiva; o resultado dela é o da fase
+        assertEquals(5, c.publicacoes.listarPorFase(IDECAN, fase.fase().id()).size());
     }
 
     @Test

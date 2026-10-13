@@ -120,10 +120,18 @@ public class GrupoCargoRepositoryAdapter implements GrupoCargoRepository {
     }
 
     @Override
-    public Optional<Integer> grupoDaFase(Instituicao instituicao, int faseId) {
+    public void desvincularFase(Instituicao instituicao, int faseId, int grupoId) {
+        switch (instituicao) {
+            case IDECAN -> idecan.desvincularFase(faseId, grupoId);
+            case IDIB -> idib.desvincularFase(faseId, grupoId);
+        }
+    }
+
+    @Override
+    public List<Integer> gruposDaFase(Instituicao instituicao, int faseId) {
         return switch (instituicao) {
-            case IDECAN -> idecan.grupoDaFase(faseId);
-            case IDIB -> idib.grupoDaFase(faseId);
+            case IDECAN -> idecan.gruposDaFase(faseId);
+            case IDIB -> idib.gruposDaFase(faseId);
         };
     }
 

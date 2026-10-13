@@ -13,15 +13,18 @@ import jakarta.transaction.Transactional;
 public class ExcluirPublicacao {
 
     private final PublicacaoRepository publicacoes;
+    private final PublicacoesDoCronograma doCronograma;
 
-    public ExcluirPublicacao(PublicacaoRepository publicacoes) {
+    public ExcluirPublicacao(PublicacaoRepository publicacoes, PublicacoesDoCronograma doCronograma) {
         this.publicacoes = publicacoes;
+        this.doCronograma = doCronograma;
     }
 
     @Transactional
     public void executar(Instituicao instituicao, int id) {
         Publicacao publicacao = publicacoes.buscar(instituicao, id)
                 .orElseThrow(() -> new NaoEncontradoException("Publicação", id));
+        doCronograma.exigirManual(instituicao, id);
         if (publicacao.publicada()) {
             throw new ConflitoException("A publicação " + id + " já foi publicada e não pode ser excluída.");
         }

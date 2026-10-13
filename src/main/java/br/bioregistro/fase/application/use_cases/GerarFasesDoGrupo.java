@@ -22,11 +22,19 @@ import jakarta.transaction.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Gera, para o grupo, as fases e as etapas escolhidas pelo usuário (tipos de etapa marcados).
- * Cada fase e cada etapa já nascem com seus espaços de publicação. As fases entram depois
- * da última ordem do edital; a ordem é única no edital inteiro, não por grupo.
+ * A fase é do edital (spec 005): se o edital já tem uma fase com exatamente os tipos de etapa
+ * pedidos (a criada pelo cronograma, ou a de outro grupo), o grupo passa a participar dela, sem
+ * duplicar.
+ * Senão, a fase é criada: cada etapa já nasce com os espaços de publicação escolhidos (ou os
+ * padrão do tipo), e a fase com o resultado próprio quando ele não repete o de uma etapa. As fases
+ * novas entram depois da última ordem do edital; a ordem é única no edital inteiro.
  */
 @ApplicationScoped
 public class GerarFasesDoGrupo {
@@ -59,17 +67,43 @@ public class GerarFasesDoGrupo {
         short ordem = fases.maiorOrdem(instituicao, grupo.editalId());
         List<FaseGeradaResponse> geradas = new ArrayList<>();
         for (FaseGerada pedido : request.fases()) {
-            ordem++;
-            geradas.add(gerarFase(instituicao, grupo, ordem, pedido));
+            Optional<Fase> existente = faseComTipo(instituicao, grupo.editalId(), pedido);
+            if (existente.isPresent()) {
+                geradas.add(participar(instituicao, grupo, existente.get()));
+            } else {
+                ordem++;
+                geradas.add(gerarFase(instituicao, grupo, ordem, pedido));
+            }
         }
         return geradas;
+    }
+
+    private Optional<Fase> faseComTipo(Instituicao instituicao, int editalId, FaseGerada pedido) {
+        Set<Integer> pedidos = (pedido.etapas() == null ? List.<EtapaGerada>of() : pedido.etapas()).stream()
+                .map(EtapaGerada::tipoId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        return fases.listarPorEdital(instituicao, editalId).stream()
+                .filter(f -> etapas.listarPorFase(instituicao, f.id()).stream()
+                        .map(Etapa::tipoId)
+                        .collect(Collectors.toSet())
+                        .equals(pedidos))
+                .findFirst();
+    }
+
+    private FaseGeradaResponse participar(Instituicao instituicao, GrupoCargo grupo, Fase fase) {
+        if (!grupos.gruposDaFase(instituicao, fase.id()).contains(grupo.id())) {
+            grupos.vincularFase(instituicao, fase.id(), grupo.id());
+        }
+        return new FaseGeradaResponse(FaseResponse.de(fase), etapas.listarPorFase(instituicao, fase.id()).stream()
+                .map(EtapaResponse::de)
+                .toList());
     }
 
     private FaseGeradaResponse gerarFase(Instituicao instituicao, GrupoCargo grupo, short ordem, FaseGerada pedido) {
         Fase fase = fases.salvar(instituicao, new Fase(null, grupo.editalId(), pedido.nome(), pedido.descricao(),
                 ordem, pedido.dataAbertura(), pedido.dataFechamento()));
         grupos.vincularFase(instituicao, fase.id(), grupo.id());
-        espacos.criarParaFase(instituicao, fase.id());
 
         List<EtapaGerada> pedidas = pedido.etapas() == null ? List.of() : pedido.etapas();
         List<EtapaResponse> criadas = new ArrayList<>();
@@ -81,9 +115,10 @@ public class GerarFasesDoGrupo {
             String nome = pedida.nome() == null || pedida.nome().isBlank() ? tipo.descricao() : pedida.nome();
             Etapa etapa = etapas.salvar(instituicao, new Etapa(null, fase.id(), nome, tipo.id(), null, null, null,
                     null, false, false, false, false, null, null, null, null, null, null));
-            espacos.criarParaEtapa(instituicao, fase.id(), etapa.id(), tipo.id());
+            espacos.criarParaEtapa(instituicao, fase.id(), etapa.id(), tipo.id(), pedida.publicacoes());
             criadas.add(EtapaResponse.de(etapa));
         }
+        espacos.sincronizarResultadoDaFase(instituicao, fase.id());
         return new FaseGeradaResponse(FaseResponse.de(fase), criadas);
     }
 }

@@ -1,6 +1,8 @@
 package br.bioregistro.fase.application.use_cases;
 
 import br.bioregistro.fase.application.dtos.CronogramaDtos.CronogramaResponse;
+import br.bioregistro.fase.application.dtos.CronogramaDtos.EditalDoCronogramaResponse;
+import br.bioregistro.fase.domain.model.cronograma.EditalDoCronograma;
 import br.bioregistro.fase.application.dtos.CronogramaDtos.ModeloResponse;
 import br.bioregistro.fase.application.dtos.CronogramaDtos.ModuloResponse;
 import br.bioregistro.fase.application.dtos.CronogramaDtos.ParametroResponse;
@@ -53,16 +55,53 @@ public class ConsultarCronograma {
     }
 
     public CronogramaResponse buscar(Instituicao instituicao, int id) {
-        Cronograma cronograma = exigir(cronogramas, instituicao, id);
+        return buscar(instituicao, id, null);
+    }
+
+    /**
+     * @param editalId nulo = o cronograma compartilhado; preenchido = a visão do edital, com a
+     *                 sobreposição dele (versão = a da sobreposição)
+     */
+    public CronogramaResponse buscar(Instituicao instituicao, int id, Integer editalId) {
+        Alvo alvo = alvo(instituicao, id, editalId);
+        Cronograma cronograma = alvo.visto();
         LocalDate hoje = hoje();
         CronogramaCalculado calculado = calcular(cronograma, cronograma.edicao());
         List<StatusEtapaResponse> status = calculado.etapas().stream()
                 .map(e -> status(e, cronograma, hoje))
                 .toList();
-        return new CronogramaResponse(id, cronograma.concursoId(), cronograma.esqueleto(), cronograma.versao(),
+        List<EditalDoCronogramaResponse> editais = cronogramas.editais(instituicao, id).stream()
+                .map(EditalDoCronogramaResponse::de)
+                .toList();
+        return new CronogramaResponse(id, cronograma.concursoId(), editalId, cronograma.esqueleto(),
+                cronograma.versao(),
                 calculado.materializado() ? "MATERIALIZADO" : "RASCUNHO", cronograma.justificativa(),
                 cronograma.edicao(), parametros(cronograma.parametros()), calculado, status,
-                cronogramas.particularidades(instituicao, id));
+                cronogramas.particularidades(instituicao, id),
+                alvo.edital() == null ? null : alvo.edital().sobreposicao().codigos(), editais);
+    }
+
+    /** O cronograma e, quando há {@code editalId}, o edital que o segue. */
+    record Alvo(Cronograma base, EditalDoCronograma edital) {
+
+        Cronograma visto() {
+            return edital == null ? base : base.doEdital(edital);
+        }
+
+        Integer editalId() {
+            return edital == null ? null : edital.editalId();
+        }
+    }
+
+    Alvo alvo(Instituicao instituicao, int id, Integer editalId) {
+        Cronograma base = exigir(cronogramas, instituicao, id);
+        if (editalId == null) {
+            return new Alvo(base, null);
+        }
+        EditalDoCronograma edital = cronogramas.doEdital(instituicao, editalId)
+                .filter(e -> e.cronogramaId() == id)
+                .orElseThrow(() -> new NaoEncontradoException("Edital no cronograma " + id + ":", editalId));
+        return new Alvo(base, edital);
     }
 
     public CronogramaCalculado simular(Instituicao instituicao, int id, Edicao edicao) {
@@ -73,9 +112,8 @@ public class ConsultarCronograma {
     }
 
     public Previa prever(Instituicao instituicao, int id, Edicao edicao, Mudanca mudanca) {
-        if (mudanca == null || mudanca.codigo() == null || mudanca.campo() == null || mudanca.modo() == null) {
-            throw new RegraDeNegocioException(
-                    "Informe a mudança: etapa, campo, valor e modo.");
+        if (mudanca == null || mudanca.codigo() == null || mudanca.campo() == null) {
+            throw new RegraDeNegocioException("Informe a mudança: etapa, campo e valor.");
         }
         Cronograma cronograma = exigir(cronogramas, instituicao, id);
         Esqueleto esqueleto = Esqueletos.porNome(cronograma.esqueleto());
