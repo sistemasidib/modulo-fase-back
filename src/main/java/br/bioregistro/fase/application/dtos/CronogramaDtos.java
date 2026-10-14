@@ -43,12 +43,11 @@ public final class CronogramaDtos {
     }
 
     /**
-     * @param concursoId  nulo = cronograma separado de um edital
      * @param editalId    nulo = o cronograma compartilhado; preenchido = a visão do edital
      * @param sobreposto  códigos que o edital mudou só para ele (nulo na visão compartilhada)
      * @param editais     editais que seguem o cronograma
      */
-    public record CronogramaResponse(int id, Integer concursoId, Integer editalId, String esqueleto, int versao,
+    public record CronogramaResponse(int id, Integer editalId, String esqueleto, int versao,
                                      String situacao,
                                      String justificativa, Edicao edicao, List<ParametroResponse> parametros,
                                      CronogramaCalculado calculado, List<StatusEtapaResponse> status,

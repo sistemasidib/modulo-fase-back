@@ -1,10 +1,10 @@
 package br.bioregistro.fase.application.controllers;
 
-import br.bioregistro.fase.application.use_cases.ConcursosEmMemoria;
 import br.bioregistro.fase.application.use_cases.CriteriosCorrecaoEmMemoria;
 import br.bioregistro.fase.application.use_cases.CriteriosDesempateEmMemoria;
 import br.bioregistro.fase.application.use_cases.CronogramasEmMemoria;
 import br.bioregistro.fase.application.use_cases.DisciplinasEmMemoria;
+import br.bioregistro.fase.application.use_cases.EntidadesEmMemoria;
 import br.bioregistro.fase.application.use_cases.EtapasEmMemoria;
 import br.bioregistro.fase.application.use_cases.FasesEmMemoria;
 import br.bioregistro.fase.application.use_cases.GruposEmMemoria;
@@ -37,9 +37,9 @@ public final class ApiEmMemoria {
     public final EtapasEmMemoria etapas = new EtapasEmMemoria();
     public final PublicacoesEmMemoria publicacoes = new PublicacoesEmMemoria();
     public final TiposEmMemoria tipos = new TiposEmMemoria();
-    public final ConcursosEmMemoria concursos = new ConcursosEmMemoria()
+    public final EntidadesEmMemoria entidades = new EntidadesEmMemoria()
             .comEdital(IDECAN, 10, "PM-XX 2027").comEdital(IDECAN, 11, "PM-XX 2027").comEdital(IDIB, 20, "Outro");
-    public final CronogramasEmMemoria cronogramas = new CronogramasEmMemoria(concursos);
+    public final CronogramasEmMemoria cronogramas = new CronogramasEmMemoria(entidades);
     public final VinculosEmMemoria vinculos = new VinculosEmMemoria(cronogramas, publicacoes);
     public final DisciplinasEmMemoria disciplinas = new DisciplinasEmMemoria();
     public final CriteriosDesempateEmMemoria criteriosDesempate = new CriteriosDesempateEmMemoria();

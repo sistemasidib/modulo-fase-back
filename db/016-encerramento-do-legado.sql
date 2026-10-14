@@ -20,12 +20,14 @@
 SET XACT_ABORT ON;
 BEGIN TRANSACTION;
 
-/* 1. Editais de concurso com cronograma passam a segui-lo. */
-INSERT INTO dbo.cronograma_edital (cronograma_id, edital_id, versao, created_at, updated_at)
-SELECT c.id, ce.edital_id, 0, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET()
-FROM dbo.cronograma c
-JOIN dbo.concurso_edital ce ON ce.concurso_id = c.concurso_id
-WHERE NOT EXISTS (SELECT 1 FROM dbo.cronograma_edital x WHERE x.edital_id = ce.edital_id);
+/* 1. Editais de concurso com cronograma passam a segui-lo (antes da db/017, que tira concurso_id). */
+IF COL_LENGTH('dbo.cronograma', 'concurso_id') IS NOT NULL AND OBJECT_ID('dbo.concurso_edital', 'U') IS NOT NULL
+    EXEC(N'
+        INSERT INTO dbo.cronograma_edital (cronograma_id, edital_id, versao, created_at, updated_at)
+        SELECT c.id, ce.edital_id, 0, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET()
+        FROM dbo.cronograma c
+        JOIN dbo.concurso_edital ce ON ce.concurso_id = c.concurso_id
+        WHERE NOT EXISTS (SELECT 1 FROM dbo.cronograma_edital x WHERE x.edital_id = ce.edital_id);');
 
 /* 2. Grupo "Todos os cargos" para editais com fase sem grupo e nenhum grupo. */
 DECLARE @editais TABLE (edital_id INT PRIMARY KEY);

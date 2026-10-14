@@ -18,14 +18,8 @@ public interface CronogramaRepository {
     /** Números atuais do modelo ({@code cronograma_parametro_padrao}). */
     Parametros parametrosPadrao(Instituicao instituicao);
 
-    /** Cronograma aberto no concurso (no máximo um). */
-    Optional<Integer> idDoConcurso(Instituicao instituicao, int concursoId);
-
-    /** Editais do concurso que seguem algum cronograma: edital → cronograma. */
-    Map<Integer, Integer> cronogramasDosEditais(Instituicao instituicao, int concursoId);
-
-    /** Um concurso excluído deixa os cronogramas dele sem concurso; os editais continuam os seguindo. */
-    void soltarDoConcurso(Instituicao instituicao, int concursoId);
+    /** Editais da entidade que seguem algum cronograma: edital → cronograma. */
+    Map<Integer, Integer> cronogramasDosEditais(Instituicao instituicao, int entidadeId);
 
     /**
      * Grava o cronograma novo com uma linha por etapa (itens próprios e status incluídos) e

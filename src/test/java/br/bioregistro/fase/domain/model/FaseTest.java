@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FaseTest {
@@ -45,9 +46,10 @@ class FaseTest {
     }
 
     @Test
-    void exigeDatas() {
-        assertThrows(RegraDeNegocioException.class,
-                () -> new Fase(null, 10, "Fase", null, (short) 1, null, FECHAMENTO));
+    void aceitaFaseSemDatas() {
+        Fase fase = new Fase(null, 10, "Fase", null, (short) 1, null, null);
+        assertNull(fase.dataAbertura());
+        assertNull(fase.dataFechamento());
     }
 
     @Test

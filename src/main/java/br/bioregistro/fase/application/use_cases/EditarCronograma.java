@@ -9,8 +9,6 @@ import br.bioregistro.fase.application.use_cases.ConsultarCronograma.Alvo;
 import br.bioregistro.fase.domain.exception.ConflitoException;
 import br.bioregistro.fase.domain.exception.NaoEncontradoException;
 import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
-import br.bioregistro.fase.domain.model.Concurso;
-import br.bioregistro.fase.domain.model.EditalResumo;
 import br.bioregistro.fase.domain.model.Instituicao;
 import br.bioregistro.fase.domain.model.cronograma.Acao;
 import br.bioregistro.fase.domain.model.cronograma.Cronograma;
@@ -24,7 +22,6 @@ import br.bioregistro.fase.domain.model.cronograma.Particularidade;
 import br.bioregistro.fase.domain.model.cronograma.Previa;
 import br.bioregistro.fase.domain.model.cronograma.Sobreposicao;
 import br.bioregistro.fase.domain.model.cronograma.StatusEtapa;
-import br.bioregistro.fase.domain.port.ConcursoRepository;
 import br.bioregistro.fase.domain.port.CronogramaRepository;
 import br.bioregistro.fase.domain.port.FaseRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -46,54 +43,35 @@ import java.util.Map;
 public class EditarCronograma {
 
     private final CronogramaRepository cronogramas;
-    private final ConcursoRepository concursos;
     private final FaseRepository fases;
     private final ConsultarCronograma consulta;
     private final PonteCronograma ponte;
 
-    public EditarCronograma(CronogramaRepository cronogramas, ConcursoRepository concursos, FaseRepository fases,
+    public EditarCronograma(CronogramaRepository cronogramas, FaseRepository fases,
                             ConsultarCronograma consulta, PonteCronograma ponte) {
         this.cronogramas = cronogramas;
-        this.concursos = concursos;
         this.fases = fases;
         this.consulta = consulta;
         this.ponte = ponte;
     }
 
     /**
-     * RB12: um cronograma por concurso; abrir de novo devolve o existente. Os editais do concurso que
-     * ainda não seguem nenhum cronograma passam a seguir este.
+     * RB12: o cronograma nasce do edital. Se o edital já segue um, devolve esse; senão, gera um novo
+     * a partir do esqueleto e o edital passa a segui-lo. Outros editais do mesmo concurso o seguem
+     * com {@link #seguir}.
      */
     @Transactional
-    public AbrirCronogramaResponse abrir(Instituicao instituicao, int concursoId, String autor) {
-        ConsultarConcursos.exigir(concursos, instituicao, concursoId);
-        var existente = cronogramas.idDoConcurso(instituicao, concursoId);
-        int id = existente.orElseGet(() -> gerar(instituicao, concursoId, autor));
-        for (EditalResumo edital : concursos.editais(instituicao, concursoId)) {
-            if (cronogramas.doEdital(instituicao, edital.id()).isEmpty()) {
-                ligar(instituicao, id, edital.id(), autor, "Edital " + edital.id() + " passou a seguir o cronograma");
-            }
-        }
-        return new AbrirCronogramaResponse(id, existente.isEmpty());
-    }
-
-    /**
-     * O edital passa a seguir o cronograma do concurso (aberto agora, se ainda não houver). Se ele já
-     * segue algum, devolve esse.
-     */
-    @Transactional
-    public AbrirCronogramaResponse abrirDoEdital(Instituicao instituicao, int concursoId, int editalId, String autor) {
-        Concurso concurso = ConsultarConcursos.exigir(concursos, instituicao, concursoId);
-        boolean doConcurso = concursos.concursoDoEdital(instituicao, editalId)
-                .map(c -> c.id().equals(concursoId)).orElse(false);
-        if (!doConcurso) {
-            throw new RegraDeNegocioException("O edital " + editalId + " não está no concurso " + concurso.nome() + ".");
+    public AbrirCronogramaResponse abrir(Instituicao instituicao, int editalId, String autor) {
+        if (!fases.editalExiste(instituicao, editalId)) {
+            throw new NaoEncontradoException("Edital", editalId);
         }
         var segue = cronogramas.doEdital(instituicao, editalId);
         if (segue.isPresent()) {
             return new AbrirCronogramaResponse(segue.get().cronogramaId(), false);
         }
-        return abrir(instituicao, concursoId, autor);
+        int id = gerar(instituicao, autor);
+        ligar(instituicao, id, editalId, autor, "Edital " + editalId + " passou a seguir o cronograma");
+        return new AbrirCronogramaResponse(id, true);
     }
 
     /**
@@ -159,9 +137,9 @@ public class EditarCronograma {
         return consulta.buscar(instituicao, id, editalId);
     }
 
-    private int gerar(Instituicao instituicao, int concursoId, String autor) {
+    private int gerar(Instituicao instituicao, String autor) {
         Esqueleto esqueleto = Esqueletos.ATUAL;
-        Cronograma novo = new Cronograma(null, concursoId, esqueleto.nome(),
+        Cronograma novo = new Cronograma(null, esqueleto.nome(),
                 cronogramas.parametrosPadrao(instituicao), Edicao.inicial(), Map.of(), null, 0);
         CronogramaCalculado calculado = consulta.calcular(novo, novo.edicao());
         int id = cronogramas.criar(instituicao, novo, calculado);

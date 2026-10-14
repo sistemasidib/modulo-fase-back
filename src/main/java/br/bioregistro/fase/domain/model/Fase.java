@@ -6,7 +6,8 @@ import java.time.OffsetDateTime;
 
 /**
  * Fase do edital. {@code ordem} é a posição da fase no edital e é única por edital
- * (UK {@code UQ_fase_edital_ordem} em {@code dbo.fases}).
+ * (UK {@code UQ_fase_edital_ordem} em {@code dbo.fases}). As datas vêm do cronograma e podem faltar
+ * (fase de edital sem cronograma ou do legado).
  */
 public record Fase(
         Integer id,
@@ -27,9 +28,6 @@ public record Fase(
         nome = Validacoes.nomeObrigatorio(nome, "da fase", NOME_MAX);
         if (ordem == null || ordem < 1) {
             throw new RegraDeNegocioException("A ordem da fase deve ser maior ou igual a 1.");
-        }
-        if (dataAbertura == null || dataFechamento == null) {
-            throw new RegraDeNegocioException("As datas de abertura e fechamento da fase são obrigatórias.");
         }
         Validacoes.periodoValido(dataAbertura, dataFechamento, "da fase");
     }

@@ -66,8 +66,8 @@ class FaseEtapaControllerTest {
 
     @Test
     void faseValidaDadosEOrdem() {
-        given().contentType(ContentType.JSON).queryParam("editalId", 10).body("{\"nome\": \"Sem datas\", \"ordem\": 1}")
-                .when().post(FASES).then().statusCode(400);
+        given().contentType(ContentType.JSON).queryParam("editalId", 10).body("{\"nome\": \"Sem datas\", \"ordem\": 2}")
+                .when().post(FASES).then().statusCode(201).body("dataAbertura", nullValue());
         given().contentType(ContentType.JSON).body(fase("Sem edital", 1))
                 .when().post(FASES).then().statusCode(400).body("message", containsString("editalId"));
         given().contentType(ContentType.JSON).queryParam("editalId", 999).body(fase("X", 1))

@@ -36,8 +36,7 @@ class CronogramaControllerTest {
     @BeforeEach
     void cronogramaNovo() {
         ApiEmMemoria.instalar();
-        int concurso = ConcursoControllerTest.criarConcurso("PM-XX 2027");
-        id = given().when().post(API + "/concursos/" + concurso + "/cronograma")
+        id = given().when().post(API + "/editais/10/cronograma")
                 .then().statusCode(201).extract().path("id");
     }
 

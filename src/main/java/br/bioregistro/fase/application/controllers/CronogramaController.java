@@ -27,7 +27,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
 
-/** Cronograma do concurso: modelo, cálculo, salvamento, histórico, particularidades e status (spec 003-B). */
+/** Cronograma: modelo, cálculo, salvamento, histórico, particularidades e status (spec 003-B). */
 @Path("/v1/{instituicao}")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

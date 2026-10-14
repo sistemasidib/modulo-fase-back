@@ -12,8 +12,8 @@ import br.bioregistro.fase.domain.model.cronograma.Parametros;
 import br.bioregistro.fase.domain.model.cronograma.Particularidade;
 import br.bioregistro.fase.domain.model.cronograma.Sobreposicao;
 import br.bioregistro.fase.domain.model.cronograma.StatusEtapa;
-import br.bioregistro.fase.domain.port.ConcursoRepository;
 import br.bioregistro.fase.domain.port.CronogramaRepository;
+import br.bioregistro.fase.domain.port.EntidadeRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,7 +37,7 @@ public class CronogramasEmMemoria implements CronogramaRepository {
     final Map<Integer, Linha> linhas = new HashMap<>();
     final Map<Integer, List<Acao>> acoes = new HashMap<>();
     final Map<Integer, List<Particularidade>> particularidades = new HashMap<>();
-    private final ConcursoRepository concursos;
+    private final EntidadeRepository entidades;
     private int sequencia = 1;
     private int sequenciaEdital = 1;
     private int sequenciaLinha = 1;
@@ -46,9 +46,9 @@ public class CronogramasEmMemoria implements CronogramaRepository {
         this(null);
     }
 
-    /** @param concursos para saber os editais de cada concurso ({@link #cronogramasDosEditais}) */
-    public CronogramasEmMemoria(ConcursoRepository concursos) {
-        this.concursos = concursos;
+    /** @param entidades para saber os editais de cada entidade ({@link #cronogramasDosEditais}) */
+    public CronogramasEmMemoria(EntidadeRepository entidades) {
+        this.entidades = entidades;
     }
 
     @Override
@@ -57,17 +57,9 @@ public class CronogramasEmMemoria implements CronogramaRepository {
     }
 
     @Override
-    public Optional<Integer> idDoConcurso(Instituicao instituicao, int concursoId) {
-        return salvos.values().stream()
-                .filter(c -> c.concursoId() != null && c.concursoId() == concursoId)
-                .map(Cronograma::id)
-                .findFirst();
-    }
-
-    @Override
-    public Map<Integer, Integer> cronogramasDosEditais(Instituicao instituicao, int concursoId) {
+    public Map<Integer, Integer> cronogramasDosEditais(Instituicao instituicao, int entidadeId) {
         Map<Integer, Integer> ids = new LinkedHashMap<>();
-        concursos.editais(instituicao, concursoId).forEach(e -> {
+        entidades.editais(instituicao, entidadeId).forEach(e -> {
             EditalDoCronograma vinculo = editais.get(e.id());
             if (vinculo != null) {
                 ids.put(e.id(), vinculo.cronogramaId());
@@ -77,17 +69,9 @@ public class CronogramasEmMemoria implements CronogramaRepository {
     }
 
     @Override
-    public void soltarDoConcurso(Instituicao instituicao, int concursoId) {
-        salvos.replaceAll((id, c) -> c.concursoId() != null && c.concursoId() == concursoId
-                ? new Cronograma(id, null, c.esqueleto(), c.parametros(), c.edicao(), c.status(), c.justificativa(),
-                c.versao())
-                : c);
-    }
-
-    @Override
     public int criar(Instituicao instituicao, Cronograma c, CronogramaCalculado calculado) {
         int id = sequencia++;
-        salvos.put(id, new Cronograma(id, c.concursoId(), c.esqueleto(), c.parametros(), c.edicao(), c.status(),
+        salvos.put(id, new Cronograma(id, c.esqueleto(), c.parametros(), c.edicao(), c.status(),
                 c.justificativa(), 0));
         return id;
     }
@@ -102,7 +86,7 @@ public class CronogramasEmMemoria implements CronogramaRepository {
         if (salvos.get(c.id()).versao() != c.versao()) {
             throw new ConflitoException("versão desatualizada");
         }
-        salvos.put(c.id(), new Cronograma(c.id(), c.concursoId(), c.esqueleto(), c.parametros(), c.edicao(),
+        salvos.put(c.id(), new Cronograma(c.id(), c.esqueleto(), c.parametros(), c.edicao(),
                 salvos.get(c.id()).status(), c.justificativa(), c.versao() + 1));
     }
 
@@ -111,7 +95,7 @@ public class CronogramasEmMemoria implements CronogramaRepository {
         Cronograma c = salvos.get(id);
         Map<String, StatusEtapa> novo = new HashMap<>(c.status());
         novo.put(codigo, status);
-        salvos.put(id, new Cronograma(id, c.concursoId(), c.esqueleto(), c.parametros(), c.edicao(), novo,
+        salvos.put(id, new Cronograma(id, c.esqueleto(), c.parametros(), c.edicao(), novo,
                 c.justificativa(), c.versao()));
     }
 

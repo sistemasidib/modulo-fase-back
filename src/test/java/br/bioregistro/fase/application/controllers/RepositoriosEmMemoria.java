@@ -1,10 +1,10 @@
 package br.bioregistro.fase.application.controllers;
 
-import br.bioregistro.fase.domain.port.ConcursoRepository;
 import br.bioregistro.fase.domain.port.CriterioCorrecaoRepository;
 import br.bioregistro.fase.domain.port.CriterioDesempateRepository;
 import br.bioregistro.fase.domain.port.CronogramaRepository;
 import br.bioregistro.fase.domain.port.DisciplinaRepository;
+import br.bioregistro.fase.domain.port.EntidadeRepository;
 import br.bioregistro.fase.domain.port.EtapaRepository;
 import br.bioregistro.fase.domain.port.FaseRepository;
 import br.bioregistro.fase.domain.port.GrupoCargoRepository;
@@ -59,8 +59,8 @@ public class RepositoriosEmMemoria {
     }
 
     @Produces
-    ConcursoRepository concursos() {
-        return delegar(ConcursoRepository.class, a -> a.concursos);
+    EntidadeRepository entidades() {
+        return delegar(EntidadeRepository.class, a -> a.entidades);
     }
 
     @Produces

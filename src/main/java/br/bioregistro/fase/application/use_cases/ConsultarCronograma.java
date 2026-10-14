@@ -73,7 +73,7 @@ public class ConsultarCronograma {
         List<EditalDoCronogramaResponse> editais = cronogramas.editais(instituicao, id).stream()
                 .map(EditalDoCronogramaResponse::de)
                 .toList();
-        return new CronogramaResponse(id, cronograma.concursoId(), editalId, cronograma.esqueleto(),
+        return new CronogramaResponse(id, editalId, cronograma.esqueleto(),
                 cronograma.versao(),
                 calculado.materializado() ? "MATERIALIZADO" : "RASCUNHO", cronograma.justificativa(),
                 cronograma.edicao(), parametros(cronograma.parametros()), calculado, status,

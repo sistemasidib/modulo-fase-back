@@ -98,47 +98,52 @@ IF COL_LENGTH('dbo.cronograma_acao', 'edital_id') IS NULL
 /* Conversão da db/013 (que precisa ter rodado antes)                  */
 /* Os índices sobre concurso_id saem antes do ALTER COLUMN e voltam    */
 /* no fim: o SQL Server não muda a nulidade de coluna indexada.        */
+/* Depois da db/017 (concurso_id já saiu), este bloco não faz nada.    */
 /* ------------------------------------------------------------------ */
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.cronograma')
-           AND name = 'UX_cronograma_concurso_compartilhado')
-    DROP INDEX UX_cronograma_concurso_compartilhado ON dbo.cronograma;
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.cronograma')
-           AND name = 'UX_cronograma_concurso')
-    DROP INDEX UX_cronograma_concurso ON dbo.cronograma;
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.cronograma')
-           AND name = 'IX_cronograma_concurso')
-    DROP INDEX IX_cronograma_concurso ON dbo.cronograma;
-
-ALTER TABLE dbo.cronograma ALTER COLUMN concurso_id INT NULL;
-
-IF COL_LENGTH('dbo.cronograma', 'edital_id') IS NOT NULL
+IF COL_LENGTH('dbo.cronograma', 'concurso_id') IS NOT NULL
 BEGIN
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.cronograma')
+               AND name = 'UX_cronograma_concurso_compartilhado')
+        DROP INDEX UX_cronograma_concurso_compartilhado ON dbo.cronograma;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.cronograma')
+               AND name = 'UX_cronograma_concurso')
+        DROP INDEX UX_cronograma_concurso ON dbo.cronograma;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.cronograma')
+               AND name = 'IX_cronograma_concurso')
+        DROP INDEX IX_cronograma_concurso ON dbo.cronograma;
+
+    EXEC(N'ALTER TABLE dbo.cronograma ALTER COLUMN concurso_id INT NULL;');
+
+    IF COL_LENGTH('dbo.cronograma', 'edital_id') IS NOT NULL
+    BEGIN
+        EXEC(N'
+            INSERT INTO dbo.cronograma_edital (cronograma_id, edital_id, versao, created_at, updated_at)
+            SELECT c.id, c.edital_id, 0, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET()
+            FROM dbo.cronograma c
+            WHERE c.edital_id IS NOT NULL
+              AND NOT EXISTS (SELECT 1 FROM dbo.cronograma_edital x WHERE x.edital_id = c.edital_id);
+
+            UPDATE dbo.cronograma SET concurso_id = NULL, edital_id = NULL WHERE edital_id IS NOT NULL;');
+
+        IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.cronograma')
+                   AND name = 'UX_cronograma_edital')
+            DROP INDEX UX_cronograma_edital ON dbo.cronograma;
+        IF OBJECT_ID('dbo.FK_cronograma_edital', 'F') IS NOT NULL
+            ALTER TABLE dbo.cronograma DROP CONSTRAINT FK_cronograma_edital;
+        ALTER TABLE dbo.cronograma DROP COLUMN edital_id;
+    END;
+
+    /* No máximo um cronograma aberto por concurso. */
+    EXEC(N'CREATE UNIQUE INDEX UX_cronograma_concurso ON dbo.cronograma (concurso_id)
+        WHERE concurso_id IS NOT NULL');
+
     EXEC(N'
         INSERT INTO dbo.cronograma_edital (cronograma_id, edital_id, versao, created_at, updated_at)
-        SELECT c.id, c.edital_id, 0, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET()
+        SELECT c.id, ce.edital_id, 0, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET()
         FROM dbo.cronograma c
-        WHERE c.edital_id IS NOT NULL
-          AND NOT EXISTS (SELECT 1 FROM dbo.cronograma_edital x WHERE x.edital_id = c.edital_id);
-
-        UPDATE dbo.cronograma SET concurso_id = NULL, edital_id = NULL WHERE edital_id IS NOT NULL;');
-
-    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.cronograma')
-               AND name = 'UX_cronograma_edital')
-        DROP INDEX UX_cronograma_edital ON dbo.cronograma;
-    IF OBJECT_ID('dbo.FK_cronograma_edital', 'F') IS NOT NULL
-        ALTER TABLE dbo.cronograma DROP CONSTRAINT FK_cronograma_edital;
-    ALTER TABLE dbo.cronograma DROP COLUMN edital_id;
+        JOIN dbo.concurso_edital ce ON ce.concurso_id = c.concurso_id
+        WHERE NOT EXISTS (SELECT 1 FROM dbo.cronograma_edital x WHERE x.edital_id = ce.edital_id);');
 END;
-
-/* No máximo um cronograma aberto por concurso. */
-EXEC(N'CREATE UNIQUE INDEX UX_cronograma_concurso ON dbo.cronograma (concurso_id)
-    WHERE concurso_id IS NOT NULL');
-
-INSERT INTO dbo.cronograma_edital (cronograma_id, edital_id, versao, created_at, updated_at)
-SELECT c.id, ce.edital_id, 0, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET()
-FROM dbo.cronograma c
-JOIN dbo.concurso_edital ce ON ce.concurso_id = c.concurso_id
-WHERE NOT EXISTS (SELECT 1 FROM dbo.cronograma_edital x WHERE x.edital_id = ce.edital_id);
 
 /* ------------------------------------------------------------------ */
 /* Fase do edital: vários grupos por fase e vínculo com o cronograma   */
@@ -176,5 +181,7 @@ END;
 
 COMMIT TRANSACTION;
 
-SELECT 'cronograma_edital' AS tabela, COUNT(*) AS linhas FROM dbo.cronograma_edital
-UNION ALL SELECT 'cronograma sem concurso', COUNT(*) FROM dbo.cronograma WHERE concurso_id IS NULL;
+SELECT 'cronograma_edital' AS tabela, COUNT(*) AS linhas FROM dbo.cronograma_edital;
+IF COL_LENGTH('dbo.cronograma', 'concurso_id') IS NOT NULL
+    EXEC(N'SELECT ''cronograma sem concurso'' AS tabela, COUNT(*) AS linhas
+           FROM dbo.cronograma WHERE concurso_id IS NULL;');

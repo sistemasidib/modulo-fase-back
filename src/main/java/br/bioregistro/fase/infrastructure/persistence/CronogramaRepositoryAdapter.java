@@ -61,26 +61,15 @@ public class CronogramaRepositoryAdapter implements CronogramaRepository {
     }
 
     @Override
-    public Optional<Integer> idDoConcurso(Instituicao instituicao, int concursoId) {
-        return Optional.ofNullable(Sql.comoInteiro(sql.valor(instituicao,
-                "SELECT id FROM dbo.cronograma WHERE concurso_id = ?1", concursoId)));
-    }
-
-    @Override
-    public Map<Integer, Integer> cronogramasDosEditais(Instituicao instituicao, int concursoId) {
+    public Map<Integer, Integer> cronogramasDosEditais(Instituicao instituicao, int entidadeId) {
         Map<Integer, Integer> ids = new LinkedHashMap<>();
         sql.linhas(instituicao, """
-                        SELECT ce.edital_id, x.cronograma_id
-                        FROM dbo.concurso_edital ce
-                        JOIN dbo.cronograma_edital x ON x.edital_id = ce.edital_id
-                        WHERE ce.concurso_id = ?1 ORDER BY ce.edital_id""", concursoId)
+                        SELECT ee.edital_id, x.cronograma_id
+                        FROM dbo.entidade_edital ee
+                        JOIN dbo.cronograma_edital x ON x.edital_id = ee.edital_id
+                        WHERE ee.entidade_id = ?1 ORDER BY ee.edital_id""", entidadeId)
                 .forEach(l -> ids.put(Sql.comoInteiro(l[0]), Sql.comoInteiro(l[1])));
         return ids;
-    }
-
-    @Override
-    public void soltarDoConcurso(Instituicao instituicao, int concursoId) {
-        sql.executar(instituicao, "UPDATE dbo.cronograma SET concurso_id = NULL WHERE concurso_id = ?1", concursoId);
     }
 
     @Override
@@ -88,11 +77,11 @@ public class CronogramaRepositoryAdapter implements CronogramaRepository {
         Edicao edicao = cronograma.edicao();
         int id = Sql.comoInteiro(sql.valor(instituicao, """
                         INSERT INTO dbo.cronograma
-                            (concurso_id, esqueleto, data_edital, data_prova, modulos, justificativa, versao,
+                            (esqueleto, data_edital, data_prova, modulos, justificativa, versao,
                              created_at, updated_at)
                         OUTPUT INSERTED.id
-                        VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())""",
-                Sql.inteiro(cronograma.concursoId()), cronograma.esqueleto(), Sql.data(edicao.dataEdital()),
+                        VALUES (?1, ?2, ?3, ?4, ?5, 0, SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())""",
+                cronograma.esqueleto(), Sql.data(edicao.dataEdital()),
                 Sql.data(edicao.dataProva()), edicao.modulosTexto(), Sql.texto(cronograma.justificativa())));
         cronograma.parametros().ordenados().forEach((chave, valor) -> sql.executar(instituicao,
                 "INSERT INTO dbo.cronograma_parametro (cronograma_id, chave, valor, excecao) VALUES (?1, ?2, ?3, ?4)",
@@ -121,7 +110,7 @@ public class CronogramaRepositoryAdapter implements CronogramaRepository {
     @Override
     public Optional<Cronograma> buscar(Instituicao instituicao, int id) {
         List<Object[]> linhas = sql.linhas(instituicao,
-                "SELECT concurso_id, esqueleto, " + DATA.formatted("data_edital")
+                "SELECT esqueleto, " + DATA.formatted("data_edital")
                         + ", modulos, justificativa, versao, " + DATA.formatted("data_prova")
                         + " FROM dbo.cronograma WHERE id = ?1", id);
         if (linhas.isEmpty()) {
@@ -170,10 +159,10 @@ public class CronogramaRepositoryAdapter implements CronogramaRepository {
                     }
                 });
 
-        Edicao edicao = new Edicao(modulos((String) c[3]), Sql.comoData(c[2]), ajustes, removidas, excecoes, itens,
-                Sql.comoData(c[6]));
-        return Optional.of(new Cronograma(id, Sql.comoInteiro(c[0]), (String) c[1], new Parametros(parametros),
-                edicao, status, (String) c[4], Sql.comoInteiro(c[5])));
+        Edicao edicao = new Edicao(modulos((String) c[2]), Sql.comoData(c[1]), ajustes, removidas, excecoes, itens,
+                Sql.comoData(c[5]));
+        return Optional.of(new Cronograma(id, (String) c[0], new Parametros(parametros),
+                edicao, status, (String) c[3], Sql.comoInteiro(c[4])));
     }
 
     @Override

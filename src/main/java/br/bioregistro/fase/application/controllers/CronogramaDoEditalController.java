@@ -16,8 +16,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 /**
- * Qual cronograma o edital segue (spec 005): seguir o de outro edital (replicar), separar-se com
- * um cronograma próprio, e sincronizar a estrutura do edital com o cronograma.
+ * Qual cronograma o edital segue (spec 005): abrir um a partir do esqueleto, seguir o de outro
+ * edital (replicar), separar-se com um cronograma próprio, e sincronizar a estrutura do edital com
+ * o cronograma.
  */
 @Path("/v1/{instituicao}/editais/{editalId}/cronograma")
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,6 +30,15 @@ public class CronogramaDoEditalController {
     public CronogramaDoEditalController(EditarCronograma editar, PonteCronograma ponte) {
         this.editar = editar;
         this.ponte = ponte;
+    }
+
+    /** 201 quando cria; 200 quando o edital já seguia um cronograma. Sem corpo: aceita qualquer Content-Type. */
+    @POST
+    @Consumes(MediaType.WILDCARD)
+    public Response abrir(@PathParam("instituicao") Instituicao instituicao, @PathParam("editalId") int editalId,
+                          @HeaderParam("X-Usuario") String usuario) {
+        AbrirCronogramaResponse aberto = editar.abrir(instituicao, editalId, Parametros.autor(usuario));
+        return Response.status(aberto.criado() ? Response.Status.CREATED : Response.Status.OK).entity(aberto).build();
     }
 
     @PUT
