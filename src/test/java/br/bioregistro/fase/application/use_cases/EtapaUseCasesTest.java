@@ -130,12 +130,13 @@ class EtapaUseCasesTest {
     void listaBuscaEExcluiJuntoComEspacosVazios() {
         EtapaResponse criada = c.criarEtapa().executar(IDECAN, faseId, etapa("Prova", PROVA_OBJETIVA, null));
 
-        assertEquals(1, new ListarEtapas(c.fases, c.etapas).executar(IDECAN, faseId).size());
-        assertEquals("Prova", new BuscarEtapa(c.etapas).executar(IDECAN, criada.id()).nome());
+        assertEquals(2, new ListarEtapas(c.fases, c.etapas).executar(IDECAN, faseId).size()); // Prova + Resultado Final
+        assertEquals("Prova", new BuscarEtapa(c.etapas, c.criteriosCorrecao).executar(IDECAN, criada.id()).nome());
 
         c.excluirEtapa().executar(IDECAN, criada.id());
         assertTrue(c.etapas.buscar(IDECAN, criada.id()).isEmpty());
         assertTrue(espacosDaEtapa(criada.id()).isEmpty());
+        assertEquals(1, new ListarEtapas(c.fases, c.etapas).executar(IDECAN, faseId).size()); // Resultado Final permanece
         assertThrows(NaoEncontradoException.class, () -> c.excluirEtapa().executar(IDECAN, criada.id()));
     }
 

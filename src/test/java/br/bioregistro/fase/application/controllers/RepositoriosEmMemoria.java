@@ -2,6 +2,7 @@ package br.bioregistro.fase.application.controllers;
 
 import br.bioregistro.fase.domain.port.CriterioCorrecaoRepository;
 import br.bioregistro.fase.domain.port.CriterioDesempateRepository;
+import br.bioregistro.fase.domain.port.CronogramaPublicoItemRepository;
 import br.bioregistro.fase.domain.port.CronogramaRepository;
 import br.bioregistro.fase.domain.port.DisciplinaRepository;
 import br.bioregistro.fase.domain.port.EntidadeRepository;
@@ -86,6 +87,11 @@ public class RepositoriosEmMemoria {
     @Produces
     CriterioCorrecaoRepository criteriosCorrecao() {
         return delegar(CriterioCorrecaoRepository.class, a -> a.criteriosCorrecao);
+    }
+
+    @Produces
+    CronogramaPublicoItemRepository cronogramaPublicoItens() {
+        return delegar(CronogramaPublicoItemRepository.class, a -> a.cronogramaPublicoItens);
     }
 
     @Produces

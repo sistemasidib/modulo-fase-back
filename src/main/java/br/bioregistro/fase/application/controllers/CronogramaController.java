@@ -8,9 +8,11 @@ import br.bioregistro.fase.application.dtos.CronogramaDtos.SalvarCronogramaReque
 import br.bioregistro.fase.application.dtos.CronogramaDtos.StatusRequest;
 import br.bioregistro.fase.application.use_cases.ConsultarCronograma;
 import br.bioregistro.fase.application.use_cases.EditarCronograma;
+import br.bioregistro.fase.application.use_cases.ExportarCronogramaPublico;
 import br.bioregistro.fase.domain.model.Instituicao;
 import br.bioregistro.fase.domain.model.cronograma.Acao;
 import br.bioregistro.fase.domain.model.cronograma.CronogramaCalculado;
+import br.bioregistro.fase.domain.model.cronograma.CronogramaPublico;
 import br.bioregistro.fase.domain.model.cronograma.Edicao;
 import br.bioregistro.fase.domain.model.cronograma.Previa;
 import jakarta.ws.rs.Consumes;
@@ -24,6 +26,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 
@@ -35,10 +38,13 @@ public class CronogramaController {
 
     private final ConsultarCronograma consultar;
     private final EditarCronograma editar;
+    private final ExportarCronogramaPublico exportarPublico;
 
-    public CronogramaController(ConsultarCronograma consultar, EditarCronograma editar) {
+    public CronogramaController(ConsultarCronograma consultar, EditarCronograma editar,
+                                ExportarCronogramaPublico exportarPublico) {
         this.consultar = consultar;
         this.editar = editar;
+        this.exportarPublico = exportarPublico;
     }
 
     @GET
@@ -53,6 +59,26 @@ public class CronogramaController {
     public CronogramaResponse buscar(@PathParam("instituicao") Instituicao instituicao, @PathParam("id") int id,
                                      @QueryParam("editalId") Integer editalId) {
         return consultar.buscar(instituicao, id, editalId);
+    }
+
+    /** Retrato do cronograma público (JSON). */
+    @GET
+    @Path("cronogramas/{id}/publico")
+    public CronogramaPublico publico(@PathParam("instituicao") Instituicao instituicao, @PathParam("id") int id,
+                                     @QueryParam("editalId") Integer editalId) {
+        return exportarPublico.executar(instituicao, id, editalId);
+    }
+
+    /** Download do cronograma público em PDF (spec 006, RN07). */
+    @GET
+    @Path("cronogramas/{id}/publico.pdf")
+    @Produces("application/pdf")
+    public Response publicoPdf(@PathParam("instituicao") Instituicao instituicao, @PathParam("id") int id,
+                               @QueryParam("editalId") Integer editalId) {
+        byte[] pdf = exportarPublico.pdf(instituicao, id, editalId);
+        return Response.ok(pdf)
+                .header("Content-Disposition", "attachment; filename=\"cronograma-publico-" + id + ".pdf\"")
+                .build();
     }
 
     /** Apaga a sobreposição: o edital volta a seguir o compartilhado em tudo. */

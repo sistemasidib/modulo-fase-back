@@ -22,6 +22,7 @@ import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.PROVA_OBJ
 import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.TAF;
 import static br.bioregistro.fase.domain.model.Instituicao.IDECAN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -105,6 +106,18 @@ class GrupoCargoUseCasesTest {
     }
 
     @Test
+    void geraFaseSemDatasPorqueQuemDaAsDatasEOCronograma() {
+        int medio = grupo("Nível médio");
+        adicionar(medio, 101);
+
+        FaseGeradaResponse gerada = c.gerarFases().executar(IDECAN, medio, new GerarFasesRequest(List.of(
+                new FaseGerada("Fase 1", null, null, null, List.of(new EtapaGerada(PROVA_OBJETIVA, null, null)))))).get(0);
+
+        assertNull(gerada.fase().dataAbertura());
+        assertNull(gerada.fase().dataFechamento());
+    }
+
+    @Test
     void geraFasesEtapasEEspacosDePublicacao() {
         int medio = grupo("Nível médio");
         adicionar(medio, 101);
@@ -113,9 +126,9 @@ class GrupoCargoUseCasesTest {
                 c.gerarFases().executar(IDECAN, medio, pedido("Fase 1", PROVA_OBJETIVA, TAF));
 
         FaseGeradaResponse fase = geradas.get(0);
-        assertEquals(List.of("Prova objetiva", "Teste de aptidão física (TAF)"),
+        assertEquals(List.of("Prova objetiva", "Teste de aptidão física (TAF)", "Resultado Final"),
                 fase.etapas().stream().map(e -> e.nome()).toList());
-        // 2 da fase + 5 da prova objetiva + 2 do TAF
+        // 2 da fase + 5 da prova objetiva + 2 do TAF (Resultado Final sem espaços próprios)
         assertEquals(9, c.publicacoes.listarPorFase(IDECAN, fase.fase().id()).size());
         assertEquals(List.of(fase.fase().id()),
                 new ListarFasesDoGrupo(c.fases, c.grupos).executar(IDECAN, medio).stream()
@@ -129,7 +142,9 @@ class GrupoCargoUseCasesTest {
 
         FaseGeradaResponse fase = c.gerarFases().executar(IDECAN, medio, pedido("Fase 1", PROVA_OBJETIVA)).get(0);
 
-        // só os 5 da prova objetiva; o resultado dela é o da fase
+        assertEquals(List.of("Prova objetiva", "Resultado Final"),
+                fase.etapas().stream().map(e -> e.nome()).toList());
+        // só os 5 da prova objetiva; o resultado dela é o da fase (Resultado Final sem espaços)
         assertEquals(5, c.publicacoes.listarPorFase(IDECAN, fase.fase().id()).size());
     }
 
@@ -145,8 +160,8 @@ class GrupoCargoUseCasesTest {
         FaseGeradaResponse doSuperior =
                 c.gerarFases().executar(IDECAN, superior, pedido("Superior", PROVA_OBJETIVA, TAF)).get(0);
 
-        assertEquals(1, doMedio.etapas().size());
-        assertEquals(2, doSuperior.etapas().size());
+        assertEquals(2, doMedio.etapas().size()); // execução + Resultado Final
+        assertEquals(3, doSuperior.etapas().size());
         assertEquals((short) 2, doMedio.fase().ordem());
         assertEquals((short) 3, doSuperior.fase().ordem());
     }

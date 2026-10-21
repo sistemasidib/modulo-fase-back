@@ -2,6 +2,7 @@ package br.bioregistro.fase.application.controllers;
 
 import br.bioregistro.fase.application.use_cases.CriteriosCorrecaoEmMemoria;
 import br.bioregistro.fase.application.use_cases.CriteriosDesempateEmMemoria;
+import br.bioregistro.fase.application.use_cases.CronogramaPublicoItensEmMemoria;
 import br.bioregistro.fase.application.use_cases.CronogramasEmMemoria;
 import br.bioregistro.fase.application.use_cases.DisciplinasEmMemoria;
 import br.bioregistro.fase.application.use_cases.EntidadesEmMemoria;
@@ -44,6 +45,7 @@ public final class ApiEmMemoria {
     public final DisciplinasEmMemoria disciplinas = new DisciplinasEmMemoria();
     public final CriteriosDesempateEmMemoria criteriosDesempate = new CriteriosDesempateEmMemoria();
     public final CriteriosCorrecaoEmMemoria criteriosCorrecao = new CriteriosCorrecaoEmMemoria();
+    public final CronogramaPublicoItensEmMemoria cronogramaPublicoItens = new CronogramaPublicoItensEmMemoria();
 
     private ApiEmMemoria() {
     }

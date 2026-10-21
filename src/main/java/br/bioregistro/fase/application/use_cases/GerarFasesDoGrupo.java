@@ -44,14 +44,17 @@ public class GerarFasesDoGrupo {
     private final EtapaRepository etapas;
     private final TipoRepository tipos;
     private final EspacosDePublicacao espacos;
+    private final ResultadoFinalDaFase resultadoFinal;
 
     public GerarFasesDoGrupo(GrupoCargoRepository grupos, FaseRepository fases, EtapaRepository etapas,
-                             TipoRepository tipos, EspacosDePublicacao espacos) {
+                             TipoRepository tipos, EspacosDePublicacao espacos,
+                             ResultadoFinalDaFase resultadoFinal) {
         this.grupos = grupos;
         this.fases = fases;
         this.etapas = etapas;
         this.tipos = tipos;
         this.espacos = espacos;
+        this.resultadoFinal = resultadoFinal;
     }
 
     @Transactional
@@ -79,25 +82,27 @@ public class GerarFasesDoGrupo {
     }
 
     private Optional<Fase> faseComTipo(Instituicao instituicao, int editalId, FaseGerada pedido) {
-        Set<Integer> pedidos = (pedido.etapas() == null ? List.<EtapaGerada>of() : pedido.etapas()).stream()
-                .map(EtapaGerada::tipoId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        Set<Integer> pedidos = tiposExecucao(instituicao, (pedido.etapas() == null ? List.<EtapaGerada>of() : pedido.etapas())
+                .stream().map(EtapaGerada::tipoId).filter(Objects::nonNull).collect(Collectors.toSet()));
         return fases.listarPorEdital(instituicao, editalId).stream()
-                .filter(f -> etapas.listarPorFase(instituicao, f.id()).stream()
-                        .map(Etapa::tipoId)
-                        .collect(Collectors.toSet())
-                        .equals(pedidos))
+                .filter(f -> tiposExecucao(instituicao, etapas.listarPorFase(instituicao, f.id()).stream()
+                        .map(Etapa::tipoId).collect(Collectors.toSet())).equals(pedidos))
                 .findFirst();
+    }
+
+    /** Ignora Resultado Final (obrigatória) na comparação de fases equivalentes. */
+    private Set<Integer> tiposExecucao(Instituicao instituicao, Set<Integer> tipoIds) {
+        return tipoIds.stream()
+                .filter(id -> tipos.tipoEtapa(instituicao, id).map(t -> !t.ehResultadoFinal()).orElse(true))
+                .collect(Collectors.toSet());
     }
 
     private FaseGeradaResponse participar(Instituicao instituicao, GrupoCargo grupo, Fase fase) {
         if (!grupos.gruposDaFase(instituicao, fase.id()).contains(grupo.id())) {
             grupos.vincularFase(instituicao, fase.id(), grupo.id());
         }
-        return new FaseGeradaResponse(FaseResponse.de(fase), etapas.listarPorFase(instituicao, fase.id()).stream()
-                .map(EtapaResponse::de)
-                .toList());
+        resultadoFinal.garantir(instituicao, fase.id());
+        return resposta(instituicao, fase);
     }
 
     private FaseGeradaResponse gerarFase(Instituicao instituicao, GrupoCargo grupo, short ordem, FaseGerada pedido) {
@@ -106,19 +111,27 @@ public class GerarFasesDoGrupo {
         grupos.vincularFase(instituicao, fase.id(), grupo.id());
 
         List<EtapaGerada> pedidas = pedido.etapas() == null ? List.of() : pedido.etapas();
-        List<EtapaResponse> criadas = new ArrayList<>();
         for (EtapaGerada pedida : pedidas) {
             if (pedida.tipoId() == null) {
                 throw new RegraDeNegocioException("O tipo da etapa é obrigatório.");
             }
             TipoEtapa tipo = TipoEtapaExistente.exigirNovo(tipos, instituicao, pedida.tipoId());
             String nome = pedida.nome() == null || pedida.nome().isBlank() ? tipo.descricao() : pedida.nome();
-            Etapa etapa = etapas.salvar(instituicao, new Etapa(null, fase.id(), nome, tipo.id(), null, null, null,
-                    null, false, false, false, false, null, null, null, null, null, null));
+            Etapa etapa = etapas.salvar(instituicao, CamposDaEtapa.aplicar(tipos, instituicao,
+                    new Etapa(null, fase.id(), nome, tipo.id(), null, null, null,
+                            null, false, false, false, false, null, null, null, null, null, null, null, null, null),
+                    true));
             espacos.criarParaEtapa(instituicao, fase.id(), etapa.id(), tipo.id(), pedida.publicacoes());
-            criadas.add(EtapaResponse.de(etapa));
+            espacos.ajustarEspacoDaModalidade(instituicao, fase.id(), etapa.id(), null, etapa.modalidade());
         }
+        resultadoFinal.garantir(instituicao, fase.id());
         espacos.sincronizarResultadoDaFase(instituicao, fase.id());
-        return new FaseGeradaResponse(FaseResponse.de(fase), criadas);
+        return resposta(instituicao, fase);
+    }
+
+    private FaseGeradaResponse resposta(Instituicao instituicao, Fase fase) {
+        return new FaseGeradaResponse(FaseResponse.de(fase), etapas.listarPorFase(instituicao, fase.id()).stream()
+                .map(EtapaResponse::de)
+                .toList());
     }
 }

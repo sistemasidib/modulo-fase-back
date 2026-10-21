@@ -1,7 +1,9 @@
 package br.bioregistro.fase.application.dtos;
 
 import br.bioregistro.fase.domain.model.Etapa;
+import br.bioregistro.fase.domain.model.Modalidade;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -22,7 +24,10 @@ public record EtapaRequest(
         Integer elegibilidadeEtapaId,
         Integer elegibilidadeStatusId,
         Integer responsavelId,
-        LocalDateTime publicadaEm
+        LocalDateTime publicadaEm,
+        Boolean notaZeroElimina,
+        BigDecimal notaMinimaPercentual,
+        String modalidade
 ) {
 
     public Etapa paraDominio(Integer id, Integer faseId) {
@@ -31,6 +36,7 @@ public record EtapaRequest(
                 Boolean.TRUE.equals(obrigatoriaParaFase),
                 Boolean.TRUE.equals(todosCandidatos),
                 Boolean.TRUE.equals(aceitaDocumentos),
-                aceitaRecurso, preliminar, elegibilidadeEtapaId, elegibilidadeStatusId, responsavelId, publicadaEm);
+                aceitaRecurso, preliminar, elegibilidadeEtapaId, elegibilidadeStatusId, responsavelId, publicadaEm,
+                notaZeroElimina, notaMinimaPercentual, Modalidade.de(modalidade));
     }
 }

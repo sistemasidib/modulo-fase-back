@@ -26,11 +26,13 @@ class Cenario {
     final PublicacoesEmMemoria publicacoes = new PublicacoesEmMemoria();
     final TiposEmMemoria tipos = new TiposEmMemoria();
     final EspacosDePublicacao espacos = new EspacosDePublicacao(tipos, publicacoes);
+    final ResultadoFinalDaFase resultadoFinal = new ResultadoFinalDaFase(tipos, etapas);
     final CriteriosDesempateEmMemoria criterios = new CriteriosDesempateEmMemoria();
     final DisciplinasEmMemoria disciplinas = new DisciplinasEmMemoria();
     final CriteriosCorrecaoEmMemoria criteriosCorrecao = new CriteriosCorrecaoEmMemoria();
     final CronogramasEmMemoria cronogramas = new CronogramasEmMemoria();
     final VinculosEmMemoria vinculos = new VinculosEmMemoria(cronogramas, publicacoes);
+    final ConfigsPublicacaoEmMemoria configsPublicacao = new ConfigsPublicacaoEmMemoria();
 
     Cenario comEdital(Instituicao instituicao, int editalId) {
         fases.comEdital(instituicao, editalId);
@@ -38,7 +40,7 @@ class Cenario {
     }
 
     CriarFase criarFase() {
-        return new CriarFase(fases, espacos);
+        return new CriarFase(fases, espacos, resultadoFinal);
     }
 
     ExcluirFase excluirFase() {
@@ -46,25 +48,29 @@ class Cenario {
     }
 
     CriarEtapa criarEtapa() {
-        return new CriarEtapa(fases, etapas, tipos, espacos);
+        return new CriarEtapa(fases, etapas, tipos, espacos, criteriosCorrecao, resultadoFinal);
     }
 
     AtualizarEtapa atualizarEtapa() {
-        return new AtualizarEtapa(etapas, tipos, vinculos);
+        return new AtualizarEtapa(etapas, tipos, vinculos, espacos, criteriosCorrecao);
     }
 
     ExcluirEtapa excluirEtapa() {
-        return new ExcluirEtapa(etapas, espacos, disciplinas, criteriosCorrecao);
+        return new ExcluirEtapa(etapas, espacos, disciplinas, criteriosCorrecao, resultadoFinal);
     }
 
     CriteriosDeCorrecao criteriosDeCorrecao() {
         return new CriteriosDeCorrecao(criteriosCorrecao, etapas, tipos);
     }
 
+    ConsultarCronograma consultarCronograma() {
+        return new ConsultarCronograma(cronogramas, RELOGIO);
+    }
+
     PonteCronograma ponte() {
-        ConsultarCronograma consulta = new ConsultarCronograma(cronogramas, RELOGIO);
+        ConsultarCronograma consulta = consultarCronograma();
         return new PonteCronograma(cronogramas, consulta,
-                new EstruturaDoCronograma(cronogramas, vinculos, fases, etapas, tipos, publicacoes));
+                new EstruturaDoCronograma(cronogramas, vinculos, fases, etapas, tipos, publicacoes, resultadoFinal));
     }
 
     PublicacoesDoCronograma doCronograma() {
@@ -74,11 +80,12 @@ class Cenario {
     /** @param encerramento fim do legado; {@code null} = sem data */
     PublicacoesDoCronograma doCronograma(LocalDate encerramento) {
         return new PublicacoesDoCronograma(vinculos,
-                new EncerramentoDoLegado(encerramento, RELOGIO, fases, cronogramas));
+                new EncerramentoDoLegado(encerramento, RELOGIO, fases, cronogramas),
+                fases, configsPublicacao);
     }
 
     GerarFasesDoGrupo gerarFases() {
-        return new GerarFasesDoGrupo(grupos, fases, etapas, tipos, espacos);
+        return new GerarFasesDoGrupo(grupos, fases, etapas, tipos, espacos, resultadoFinal);
     }
 
     static FaseRequest fase(String nome, int ordem) {
@@ -87,6 +94,7 @@ class Cenario {
 
     static EtapaRequest etapa(String nome, int tipoId, Integer elegibilidadeEtapaId) {
         return new EtapaRequest(nome, tipoId, null, null, null, null, null, null, null, null, null, null,
-                elegibilidadeEtapaId, elegibilidadeEtapaId == null ? null : APROVADO, null, null);
+                elegibilidadeEtapaId, elegibilidadeEtapaId == null ? null : APROVADO, null, null,
+                null, null, null);
     }
 }

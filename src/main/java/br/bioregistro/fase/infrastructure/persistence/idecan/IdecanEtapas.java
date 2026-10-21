@@ -1,5 +1,6 @@
 package br.bioregistro.fase.infrastructure.persistence.idecan;
 
+import br.bioregistro.fase.domain.model.Modalidade;
 import br.bioregistro.fase.infrastructure.persistence.RestricaoDoBanco;
 import br.com.bio.registro.core.runtime.entities.idecan.dbo.Etapa;
 import br.com.bio.registro.core.runtime.entities.idecan.dbo.Fase;
@@ -49,6 +50,9 @@ public class IdecanEtapas {
         entidade.elegibilidadeStatusId = etapa.elegibilidadeStatusId();
         entidade.responsavelId = etapa.responsavelId();
         entidade.publicadaEm = etapa.publicadaEm();
+        entidade.notaZeroElimina = etapa.notaZeroElimina();
+        entidade.notaMinimaPercentual = etapa.notaMinimaPercentual();
+        entidade.modalidade = etapa.modalidade() == null ? null : etapa.modalidade().canonica().name();
         entidade.updatedAt = agora;
         entidade.persist();
         RestricaoDoBanco.flush(() -> Etapa.flush(), "A etapa viola uma restrição do banco (tipo ou status inexistente?).");
@@ -67,6 +71,6 @@ public class IdecanEtapas {
                 Boolean.TRUE.equals(e.reprovavel), Boolean.TRUE.equals(e.obrigatoriaParaFase),
                 Boolean.TRUE.equals(e.todosCandidatos), Boolean.TRUE.equals(e.aceitaDocumentos),
                 e.aceitaRecurso, e.preliminar, e.elegibilidadeEtapaId, e.elegibilidadeStatusId, e.responsavelId,
-                e.publicadaEm);
+                e.publicadaEm, e.notaZeroElimina, e.notaMinimaPercentual, Modalidade.de(e.modalidade));
     }
 }

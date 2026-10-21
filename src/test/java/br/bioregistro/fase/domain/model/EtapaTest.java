@@ -3,6 +3,7 @@ package br.bioregistro.fase.domain.model;
 import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,7 +15,8 @@ class EtapaTest {
     static Etapa etapa(Integer id, Integer faseId, String nome, Integer tipoId,
                        OffsetDateTime abertura, OffsetDateTime fechamento, Integer elegibilidadeEtapaId) {
         return new Etapa(id, faseId, nome, tipoId, null, abertura, fechamento, null,
-                false, false, false, false, null, null, elegibilidadeEtapaId, null, null, null);
+                false, false, false, false, null, null, elegibilidadeEtapaId, null, null, null,
+                null, null, null);
     }
 
     @Test
@@ -45,5 +47,24 @@ class EtapaTest {
     @Test
     void etapaNaoEPreRequisitoDeSiMesma() {
         assertThrows(RegraDeNegocioException.class, () -> etapa(5, 1, "Prova", 1, null, null, 5));
+    }
+
+    @Test
+    void recusaNotaMinimaInvalida() {
+        assertThrows(RegraDeNegocioException.class,
+                () -> new Etapa(null, 1, "Discursiva", 4, null, null, null, null, false, false, false, false,
+                        null, null, null, null, null, null, true, BigDecimal.ZERO, null));
+        assertThrows(RegraDeNegocioException.class,
+                () -> new Etapa(null, 1, "Discursiva", 4, null, null, null, null, false, false, false, false,
+                        null, null, null, null, null, null, true, new BigDecimal("100.5"), null));
+        assertThrows(RegraDeNegocioException.class,
+                () -> new Etapa(null, 1, "Discursiva", 4, null, null, null, null, false, false, false, false,
+                        null, null, null, null, null, null, true, new BigDecimal("33.333"), null));
+    }
+
+    @Test
+    void calculaNotaMinimaEmPontos() {
+        assertEquals(new BigDecimal("20.00"),
+                Etapa.notaMinimaEmPontos(new BigDecimal("40"), new BigDecimal("50")));
     }
 }

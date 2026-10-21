@@ -27,7 +27,7 @@ class TipoControllerTest {
     void listaTodosOsTiposDeEtapaComCategoria() {
         given().when().get("/v1/idecan/tipos/etapa")
                 .then().statusCode(200)
-                .body("$", hasSize(4))
+                .body("$", hasSize(6))
                 .body("find { it.valor == 'analise_pcd' }.categoria", is("ANALISE"))
                 .body("find { it.valor == 'prova_objetiva' }.categoria", is("EXECUCAO"));
     }

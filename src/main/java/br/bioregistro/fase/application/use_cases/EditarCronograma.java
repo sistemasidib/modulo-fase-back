@@ -15,7 +15,6 @@ import br.bioregistro.fase.domain.model.cronograma.Cronograma;
 import br.bioregistro.fase.domain.model.cronograma.CronogramaCalculado;
 import br.bioregistro.fase.domain.model.cronograma.Edicao;
 import br.bioregistro.fase.domain.model.cronograma.EditalDoCronograma;
-import br.bioregistro.fase.domain.model.cronograma.EtapaCalculada;
 import br.bioregistro.fase.domain.model.cronograma.Esqueleto;
 import br.bioregistro.fase.domain.model.cronograma.Esqueletos;
 import br.bioregistro.fase.domain.model.cronograma.Particularidade;
@@ -36,8 +35,8 @@ import java.util.Map;
  * recalcula tudo, sem confiar em datas vindas de fora.
  *
  * <p>Um cronograma é seguido por um ou mais editais (spec 005). Sem {@code editalId}, a escrita
- * vale para todos; com {@code editalId}, vira sobreposição só daquele edital. Depois de cada
- * escrita, a {@link PonteCronograma} atualiza os editais afetados.
+ * vale para todos; com {@code editalId}, vira sobreposição só daquele edital. Spec 006 RN09c: a
+ * escrita <strong>não</strong> dispara a {@link PonteCronograma}.
  */
 @ApplicationScoped
 public class EditarCronograma {
@@ -45,14 +44,13 @@ public class EditarCronograma {
     private final CronogramaRepository cronogramas;
     private final FaseRepository fases;
     private final ConsultarCronograma consulta;
-    private final PonteCronograma ponte;
 
     public EditarCronograma(CronogramaRepository cronogramas, FaseRepository fases,
                             ConsultarCronograma consulta, PonteCronograma ponte) {
         this.cronogramas = cronogramas;
         this.fases = fases;
         this.consulta = consulta;
-        this.ponte = ponte;
+        // ponte mantida no construtor por compatibilidade CDI; RN09c não a usa na escrita
     }
 
     /**
@@ -117,7 +115,6 @@ public class EditarCronograma {
                 "cópia do cronograma " + origem.id() + " (versão " + origem.versao() + ") com a sobreposição do edital",
                 Acao.GERACAO, List.of()));
         cronogramas.ligarEdital(instituicao, id, editalId);
-        ponte.sincronizarEdital(instituicao, editalId);
         return new AbrirCronogramaResponse(id, true);
     }
 
@@ -133,7 +130,6 @@ public class EditarCronograma {
                 "voltou a seguir o cronograma compartilhado em tudo · desfeito: "
                         + String.join(", ", alvo.edital().sobreposicao().codigos()),
                 Acao.EDICAO, List.of()).doEdital(editalId));
-        ponte.sincronizarEdital(instituicao, editalId);
         return consulta.buscar(instituicao, id, editalId);
     }
 
@@ -153,7 +149,6 @@ public class EditarCronograma {
         cronogramas.ligarEdital(instituicao, cronogramaId, editalId);
         cronogramas.registrar(instituicao, cronogramaId,
                 Acao.de(autor, acao, null, Acao.EDICAO, List.of()).doEdital(editalId));
-        ponte.sincronizarEdital(instituicao, editalId);
     }
 
     /** @param editalId nulo = salva o compartilhado; preenchido = a sobreposição do edital */
@@ -194,16 +189,7 @@ public class EditarCronograma {
                         + calculado.indicadores().etapasAtivas() + " etapas ativas"
                         + (calculado.checagens().viola() ? " · viola restrição" : ""),
                 Acao.SALVAMENTO, justificativa, List.of(), editalId));
-        sincronizar(instituicao, id, editalId);
         return consulta.buscar(instituicao, id, editalId);
-    }
-
-    private void sincronizar(Instituicao instituicao, int id, Integer editalId) {
-        if (editalId == null) {
-            ponte.sincronizarCronograma(instituicao, id);
-        } else {
-            ponte.sincronizarEdital(instituicao, editalId);
-        }
     }
 
     @Transactional
@@ -233,51 +219,19 @@ public class EditarCronograma {
         return consulta.buscar(instituicao, id);
     }
 
-    /** RN30: marcação à mão conforme o fluxo do tipo da etapa. */
+    /** Spec 006 RN09b: o cronograma público só seleciona datas — sem funções de publicação. */
     @Transactional
     public CronogramaResponse marcarStatus(Instituicao instituicao, int id, Integer editalId, String codigo,
                                            StatusEtapa novo, String autor) {
-        if (novo == null) {
-            throw new RegraDeNegocioException("Informe o status.");
-        }
-        Alvo alvo = consulta.alvo(instituicao, id, editalId);
-        Cronograma visto = alvo.visto();
-        EtapaCalculada etapa = etapa(visto, codigo);
-        StatusEtapa atual = visto.status(codigo);
-        StatusEtapa.exigirMarcacao(etapa.tipoStatus(), atual, novo);
-        gravarStatus(instituicao, alvo, codigo, atual, novo, "Mudou o status · " + codigo, autor);
-        return consulta.buscar(instituicao, id, editalId);
+        throw new ConflitoException(
+                "O cronograma público não marca publicação. Use só a seleção de datas.");
     }
 
-    /** RN30: gatilho "Registrar 1º recurso", liberado quando o prazo abre. */
+    /** Spec 006 RN09b: gatilho de publicação/recurso não faz parte do cronograma público. */
     @Transactional
     public CronogramaResponse registrarPrimeiroRecurso(Instituicao instituicao, int id, Integer editalId,
                                                        String codigo, String autor) {
-        Alvo alvo = consulta.alvo(instituicao, id, editalId);
-        Cronograma visto = alvo.visto();
-        EtapaCalculada etapa = etapa(visto, codigo);
-        StatusEtapa atual = visto.status(codigo);
-        StatusEtapa novo = StatusEtapa.registrarPrimeiroRecurso(etapa, atual, consulta.hoje());
-        gravarStatus(instituicao, alvo, codigo, atual, novo, "Registrou o 1º recurso · " + codigo, autor);
-        return consulta.buscar(instituicao, id, editalId);
-    }
-
-    private EtapaCalculada etapa(Cronograma cronograma, String codigo) {
-        return consulta.calcular(cronograma, cronograma.edicao()).etapa(codigo)
-                .orElseThrow(() -> new NaoEncontradoException("Etapa do cronograma", codigo));
-    }
-
-    private void gravarStatus(Instituicao instituicao, Alvo alvo, String codigo, StatusEtapa atual, StatusEtapa novo,
-                              String acao, String autor) {
-        int id = alvo.base().id();
-        if (alvo.edital() == null) {
-            cronogramas.mudarStatus(instituicao, id, codigo, novo);
-        } else {
-            EditalDoCronograma edital = alvo.edital();
-            cronogramas.salvarSobreposicao(instituicao, edital.com(edital.sobreposicao().comStatus(codigo, novo)));
-        }
-        cronogramas.registrar(instituicao, id, Acao.de(autor, acao, atual + " → " + novo, Acao.EDICAO,
-                List.of(new Previa.Item(codigo, "status", atual.name(), novo.name()))).doEdital(alvo.editalId()));
-        sincronizar(instituicao, id, alvo.editalId());
+        throw new ConflitoException(
+                "O cronograma público não registra publicação nem recurso. Use só a seleção de datas.");
     }
 }

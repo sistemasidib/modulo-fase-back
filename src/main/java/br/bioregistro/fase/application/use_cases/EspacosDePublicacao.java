@@ -3,6 +3,7 @@ package br.bioregistro.fase.application.use_cases;
 import br.bioregistro.fase.domain.exception.ConflitoException;
 import br.bioregistro.fase.domain.exception.NaoEncontradoException;
 import br.bioregistro.fase.domain.model.Instituicao;
+import br.bioregistro.fase.domain.model.Modalidade;
 import br.bioregistro.fase.domain.model.Publicacao;
 import br.bioregistro.fase.domain.model.TipoPublicacao;
 import br.bioregistro.fase.domain.port.PublicacaoRepository;
@@ -12,6 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Espaços de publicação da fase (resultado preliminar e oficial) e da etapa (conforme
@@ -58,6 +60,41 @@ public class EspacosDePublicacao {
 
     private static boolean ehResultado(Publicacao p) {
         return DA_FASE.contains(p.tipo().valor());
+    }
+
+    /**
+     * Troca o espaço de locais ↔ link conforme a modalidade S05 (RN18). Espaço já publicado
+     * não muda; devolve aviso para a tela.
+     *
+     * @return aviso quando o espaço publicado impede a troca; {@code null} se trocou ou não há o que fazer
+     */
+    public String ajustarEspacoDaModalidade(Instituicao instituicao, int faseId, int etapaId,
+                                            Modalidade anterior, Modalidade nova) {
+        if (nova == null || Objects.equals(anterior, nova)) {
+            return null;
+        }
+        boolean remota = nova != null && nova.remota();
+        String de = remota ? TipoPublicacao.LOCAL_PROVA : TipoPublicacao.LINK_ACESSO;
+        String para = remota ? TipoPublicacao.LINK_ACESSO : TipoPublicacao.LOCAL_PROVA;
+        Optional<Publicacao> atual = publicacoes.listarPorEtapa(instituicao, etapaId).stream()
+                .filter(p -> de.equals(p.tipo().valor()) || para.equals(p.tipo().valor()))
+                .findFirst();
+        if (atual.isEmpty()) {
+            TipoPublicacao tipo = tipoPorValor(instituicao, para);
+            publicacoes.salvar(instituicao, Publicacao.espaco(faseId, etapaId, tipo));
+            return null;
+        }
+        Publicacao espaco = atual.get();
+        if (para.equals(espaco.tipo().valor())) {
+            return null;
+        }
+        if (espaco.publicada()) {
+            return "A publicação de " + espaco.tipo().descricao()
+                    + " já está publicada: o tipo não muda. Ajuste no cronograma ou publique o link à parte.";
+        }
+        publicacoes.excluir(instituicao, espaco.id());
+        publicacoes.salvar(instituicao, Publicacao.espaco(faseId, etapaId, tipoPorValor(instituicao, para)));
+        return null;
     }
 
     public void criarParaEtapa(Instituicao instituicao, int faseId, int etapaId, int tipoEtapaId) {

@@ -1,6 +1,7 @@
 package br.bioregistro.fase.application.use_cases;
 
 import br.bioregistro.fase.domain.exception.NaoEncontradoException;
+import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 import br.bioregistro.fase.domain.model.Etapa;
 import br.bioregistro.fase.domain.model.Instituicao;
 import br.bioregistro.fase.domain.port.CriterioCorrecaoRepository;
@@ -21,23 +22,30 @@ public class ExcluirEtapa {
     private final EspacosDePublicacao espacos;
     private final DisciplinaRepository disciplinas;
     private final CriterioCorrecaoRepository criteriosCorrecao;
+    private final ResultadoFinalDaFase resultadoFinal;
 
     public ExcluirEtapa(EtapaRepository etapas, EspacosDePublicacao espacos, DisciplinaRepository disciplinas,
-                        CriterioCorrecaoRepository criteriosCorrecao) {
+                        CriterioCorrecaoRepository criteriosCorrecao, ResultadoFinalDaFase resultadoFinal) {
         this.etapas = etapas;
         this.espacos = espacos;
         this.disciplinas = disciplinas;
         this.criteriosCorrecao = criteriosCorrecao;
+        this.resultadoFinal = resultadoFinal;
     }
 
     @Transactional
     public void executar(Instituicao instituicao, int id) {
         Etapa etapa = etapas.buscar(instituicao, id)
                 .orElseThrow(() -> new NaoEncontradoException("Etapa", id));
+        if (resultadoFinal.ehObrigatoria(instituicao, etapa)) {
+            throw new RegraDeNegocioException(
+                    "\"Resultado Final\" é obrigatória em toda fase e não pode ser excluída.");
+        }
         espacos.removerDaEtapa(instituicao, id);
         disciplinas.removerDaEtapa(instituicao, id);
         criteriosCorrecao.excluirDaEtapa(instituicao, id);
         etapas.excluir(instituicao, id);
+        resultadoFinal.garantir(instituicao, etapa.faseId());
         espacos.sincronizarResultadoDaFase(instituicao, etapa.faseId());
     }
 }

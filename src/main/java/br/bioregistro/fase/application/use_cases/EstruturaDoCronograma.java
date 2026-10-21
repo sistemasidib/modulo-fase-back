@@ -44,16 +44,18 @@ public class EstruturaDoCronograma {
     private final EtapaRepository etapas;
     private final TipoRepository tipos;
     private final PublicacaoRepository publicacoes;
+    private final ResultadoFinalDaFase resultadoFinal;
 
     public EstruturaDoCronograma(CronogramaRepository cronogramas, VinculoCronogramaRepository vinculos,
                                  FaseRepository fases, EtapaRepository etapas, TipoRepository tipos,
-                                 PublicacaoRepository publicacoes) {
+                                 PublicacaoRepository publicacoes, ResultadoFinalDaFase resultadoFinal) {
         this.cronogramas = cronogramas;
         this.vinculos = vinculos;
         this.fases = fases;
         this.etapas = etapas;
         this.tipos = tipos;
         this.publicacoes = publicacoes;
+        this.resultadoFinal = resultadoFinal;
     }
 
     public void sincronizar(Instituicao instituicao, EditalDoCronograma edital, CronogramaCalculado calculado) {
@@ -74,6 +76,7 @@ public class EstruturaDoCronograma {
                     .map(f -> comDatas(instituicao, f, modulo, calculado))
                     .orElseGet(() -> faseNova(instituicao, edital, modulo, tipo.get(), calculado));
             Etapa etapa = etapaDoTipo(instituicao, fase, tipo.get());
+            resultadoFinal.garantir(instituicao, fase.id());
             for (PublicacaoDoModulo pedida : modulo.publicacoes()) {
                 vincularPublicacao(instituicao, fase, etapa, pedida, linhas);
             }
@@ -130,8 +133,11 @@ public class EstruturaDoCronograma {
         return etapas.listarPorFase(instituicao, fase.id()).stream()
                 .filter(e -> Objects.equals(e.tipoId(), tipo.id()))
                 .findFirst()
-                .orElseGet(() -> etapas.salvar(instituicao, new Etapa(null, fase.id(), tipo.descricao(), tipo.id(),
-                        null, null, null, null, false, false, false, false, null, null, null, null, null, null)));
+                .orElseGet(() -> etapas.salvar(instituicao, CamposDaEtapa.aplicar(tipos, instituicao,
+                        new Etapa(null, fase.id(), tipo.descricao(), tipo.id(),
+                                null, null, null, null, false, false, false, false, null, null, null, null, null, null,
+                                null, null, null),
+                        true)));
     }
 
     /** A publicação do tipo na etapa (criada se faltar) passa a apontar para as linhas do cronograma. */

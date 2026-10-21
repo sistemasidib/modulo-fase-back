@@ -16,6 +16,9 @@ public class TiposEmMemoria implements TipoRepository {
     public static final int TAF = 2;
     public static final int ANALISE_PCD = 3;
     public static final int PROVA_DISCURSIVA = 4;
+    public static final int HETEROIDENTIFICACAO = 5;
+    public static final int BIOPSICOSSOCIAL = 6;
+    public static final int RESULTADO_FINAL = 7;
 
     static final TipoPublicacao LOCAL_PROVA = new TipoPublicacao(1, "local_prova", "Local de prova", false);
     static final TipoPublicacao GABARITO_PRELIMINAR =
@@ -26,20 +29,29 @@ public class TiposEmMemoria implements TipoRepository {
             new TipoPublicacao(4, "resultado_preliminar", "Resultado preliminar", true);
     static final TipoPublicacao RESULTADO_OFICIAL =
             new TipoPublicacao(5, "resultado_oficial", "Resultado oficial", false);
+    static final TipoPublicacao LINK_ACESSO =
+            new TipoPublicacao(6, "link_acesso", "Link / instruções de acesso", false);
 
     private static final List<TipoEtapa> TIPOS_ETAPA = List.of(
             new TipoEtapa(PROVA_OBJETIVA, "prova_objetiva", "Prova objetiva"),
             new TipoEtapa(TAF, "taf", "Teste de aptidão física (TAF)"),
             new TipoEtapa(ANALISE_PCD, "analise_pcd", "Análise de solicitações: PcD"),
-            new TipoEtapa(PROVA_DISCURSIVA, "prova_discursiva", "Prova discursiva"));
+            new TipoEtapa(PROVA_DISCURSIVA, "prova_discursiva", "Prova discursiva"),
+            new TipoEtapa(HETEROIDENTIFICACAO, "heteroidentificacao", "Heteroidentificação"),
+            new TipoEtapa(BIOPSICOSSOCIAL, "biopsicossocial", "Avaliação biopsicossocial"),
+            new TipoEtapa(RESULTADO_FINAL, "resultado", "Resultado Final"));
 
     private static final List<TipoPublicacao> TIPOS_PUBLICACAO =
-            List.of(LOCAL_PROVA, GABARITO_PRELIMINAR, GABARITO_DEFINITIVO, RESULTADO_PRELIMINAR, RESULTADO_OFICIAL);
+            List.of(LOCAL_PROVA, GABARITO_PRELIMINAR, GABARITO_DEFINITIVO, RESULTADO_PRELIMINAR, RESULTADO_OFICIAL,
+                    LINK_ACESSO);
 
     private static final Map<Integer, List<TipoPublicacao>> PADRAO = Map.of(
-            PROVA_OBJETIVA, TIPOS_PUBLICACAO,
+            PROVA_OBJETIVA, List.of(LOCAL_PROVA, GABARITO_PRELIMINAR, GABARITO_DEFINITIVO, RESULTADO_PRELIMINAR,
+                    RESULTADO_OFICIAL),
             TAF, List.of(RESULTADO_PRELIMINAR, RESULTADO_OFICIAL),
-            PROVA_DISCURSIVA, List.of(RESULTADO_PRELIMINAR, RESULTADO_OFICIAL));
+            PROVA_DISCURSIVA, List.of(RESULTADO_PRELIMINAR, RESULTADO_OFICIAL),
+            HETEROIDENTIFICACAO, List.of(LOCAL_PROVA, RESULTADO_PRELIMINAR, RESULTADO_OFICIAL),
+            BIOPSICOSSOCIAL, List.of(LOCAL_PROVA, RESULTADO_PRELIMINAR, RESULTADO_OFICIAL));
 
     @Override
     public List<TipoEtapa> tiposEtapa(Instituicao instituicao) {

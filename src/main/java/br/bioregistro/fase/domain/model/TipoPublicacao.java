@@ -8,4 +8,7 @@ public record TipoPublicacao(Integer id, String valor, String descricao, boolean
 
     public static final String RESULTADO_PRELIMINAR = "resultado_preliminar";
     public static final String RESULTADO_OFICIAL = "resultado_oficial";
+    public static final String LOCAL_PROVA = "local_prova";
+    /** Modalidade Remota do S05 (spec 006, RN18). */
+    public static final String LINK_ACESSO = "link_acesso";
 }

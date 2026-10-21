@@ -57,15 +57,17 @@ class CronogramaUseCasesTest {
             .comEdital(IDECAN, 10, "PM-XX 2027").comEdital(IDECAN, 11, "PM-XX 2027").comEdital(IDIB, 20, "Outro");
     private final CronogramasEmMemoria cronogramas = new CronogramasEmMemoria(entidades);
     private final VinculosEmMemoria vinculos = new VinculosEmMemoria(cronogramas, publicacoes);
+    private final ConfigsPublicacaoEmMemoria configsPublicacao = new ConfigsPublicacaoEmMemoria();
 
     private final ConsultarEntidades consultarEntidades = new ConsultarEntidades(entidades, cronogramas);
     private final ManterEntidade manterEntidade = new ManterEntidade(entidades, fases, consultarEntidades);
     private final ConsultarCronograma consultar = new ConsultarCronograma(cronogramas, HOJE);
+    private final ResultadoFinalDaFase resultadoFinal = new ResultadoFinalDaFase(tipos, etapas);
     private final PonteCronograma ponte = new PonteCronograma(cronogramas, consultar,
-            new EstruturaDoCronograma(cronogramas, vinculos, fases, etapas, tipos, publicacoes));
+            new EstruturaDoCronograma(cronogramas, vinculos, fases, etapas, tipos, publicacoes, resultadoFinal));
     private final EditarCronograma editar = new EditarCronograma(cronogramas, fases, consultar, ponte);
     private final PublicacoesDoCronograma doCronograma = new PublicacoesDoCronograma(vinculos,
-            new EncerramentoDoLegado((LocalDate) null, HOJE, fases, cronogramas));
+            new EncerramentoDoLegado((LocalDate) null, HOJE, fases, cronogramas), fases, configsPublicacao);
 
     CronogramaUseCasesTest() {
         fases.comEdital(IDECAN, 10).comEdital(IDECAN, 11).comEdital(IDIB, 20);
@@ -257,21 +259,14 @@ class CronogramaUseCasesTest {
     }
 
     @Test
-    void cb16_statusSegueOFluxoEOGatilhoDoRecurso() {
+    void rn09b_cronogramaPublicoNaoMarcaPublicacao() {
         int id = editar.abrir(IDECAN, 10, "Yuri").id();
         editar.salvar(IDECAN, id, null, salvar(0, edital(LocalDate.of(2026, 12, 3)), null), "Yuri");
 
-        // prazo do recurso do gabarito (E17) ainda não abriu em 10/10/2026
-        assertThrows(RegraDeNegocioException.class,
+        assertThrows(ConflitoException.class,
                 () -> editar.registrarPrimeiroRecurso(IDECAN, id, null, "E17", "Yuri"));
-        assertThrows(RegraDeNegocioException.class,
-                () -> editar.marcarStatus(IDECAN, id, null, "E17", StatusEtapa.EM_ANALISE, "Yuri"));
-
-        CronogramaResponse feito = editar.marcarStatus(IDECAN, id, null, "E04", StatusEtapa.FEITO, "Yuri");
-        var e04 = feito.status().stream().filter(s -> s.codigo().equals("E04")).findFirst().orElseThrow();
-        assertEquals(StatusEtapa.FEITO, e04.manual());
-        assertNull(e04.automatico());
-        assertTrue(consultar.historico(IDECAN, id).get(0).acao().contains("E04"));
+        assertThrows(ConflitoException.class,
+                () -> editar.marcarStatus(IDECAN, id, null, "E04", StatusEtapa.FEITO, "Yuri"));
     }
 
     @Test
@@ -324,10 +319,8 @@ class CronogramaUseCasesTest {
     void statusDoEditalNaoMexeNoCompartilhado() {
         int id = cronogramaComDoisEditais();
         editar.salvar(IDECAN, id, null, salvar(0, OK, null), "Yuri");
-        editar.marcarStatus(IDECAN, id, 10, "E04", StatusEtapa.FEITO, "Ana");
-
-        assertEquals(StatusEtapa.FEITO, cronogramas.salvos.get(id).doEdital(
-                cronogramas.doEdital(IDECAN, 10).orElseThrow()).status("E04"));
+        assertThrows(ConflitoException.class,
+                () -> editar.marcarStatus(IDECAN, id, 10, "E04", StatusEtapa.FEITO, "Ana"));
         assertEquals(StatusEtapa.A_FAZER, cronogramas.salvos.get(id).status("E04"));
     }
 
@@ -413,22 +406,25 @@ class CronogramaUseCasesTest {
         int vinculo = cronogramas.doEdital(IDECAN, 10).orElseThrow().id();
         assertTrue(vinculos.faseDoModulo(IDECAN, vinculo, ModuloDeExecucao.NUCLEO).isEmpty());
         assertTrue(fases.listarPorEdital(IDECAN, 10).isEmpty());
-        assertFalse(cronogramas.linhasDoEdital(IDECAN, vinculo).isEmpty());
+        // RN09c: sem ponte, não há linhas materializadas nem fases
+        assertTrue(cronogramas.linhasDoEdital(IDECAN, vinculo).isEmpty());
         assertEquals(id, cronogramas.doEdital(IDECAN, 10).orElseThrow().cronogramaId());
     }
 
     @Test
-    void ponteCriaAProvaObjetivaComAsPublicacoesDoCronograma() {
+    void rn09c_salvarCronogramaNaoCriaFase_ponteExplicitaAindaFunciona() {
         int id = cronogramaComDoisEditais();
         Edicao comProva = new Edicao(Set.of(), LocalDate.of(2026, 12, 3), Map.of(), Set.of(), Set.of(), List.of(),
                 LocalDate.of(2027, 2, 20)); // sábado
         CronogramaResponse salvo = editar.salvar(IDECAN, id, null, salvar(0, comProva, null), "Yuri");
         assertEquals(LocalDate.of(2027, 2, 20), salvo.calculado().etapa("E15").orElseThrow().inicio());
+        assertTrue(fases.listarPorEdital(IDECAN, 10).isEmpty());
 
+        ponte.sincronizarCronograma(IDECAN, id);
         for (int edital : List.of(10, 11)) {
             Fase fase = faseDoModulo(edital, ModuloDeExecucao.NUCLEO);
             assertEquals("Prova objetiva", fase.nome());
-            assertEquals(1, etapas.listarPorFase(IDECAN, fase.id()).size());
+            assertEquals(2, etapas.listarPorFase(IDECAN, fase.id()).size()); // execução + Resultado Final
             assertEquals(5, vinculos.publicacoesDaFase(IDECAN, fase.id()).size());
         }
 
@@ -439,18 +435,13 @@ class CronogramaUseCasesTest {
         assertEquals(LocalDate.of(2027, 2, 21), gabarito.dataPrevista().toLocalDate());
         assertEquals(LocalDate.of(2027, 2, 21), gabarito.recursoInicio().toLocalDate());
         assertNull(gabarito.publicadaEm());
-
-        editar.marcarStatus(IDECAN, id, 10, "E16", StatusEtapa.PUBLICADO, "Ana");
-        PublicacaoResponse publicado = new ListarPublicacoes(fases, publicacoes, doCronograma)
-                .executar(IDECAN, fase.id()).stream().filter(p -> p.tipo().equals("gabarito_preliminar"))
-                .findFirst().orElseThrow();
-        assertEquals(LocalDate.of(2027, 2, 21), publicado.publicadaEm().toLocalDate());
     }
 
     @Test
     void sincronizarDeNovoNaoDuplica() {
         int id = cronogramaComDoisEditais();
         editar.salvar(IDECAN, id, null, salvar(0, OK, null), "Yuri");
+        ponte.sincronizarEdital(IDECAN, 10);
         int fasesAntes = fases.listarPorEdital(IDECAN, 10).size();
         int publicacoesAntes = publicacoes.listarPorFase(IDECAN, faseDoModulo(10, ModuloDeExecucao.NUCLEO).id()).size();
 
@@ -465,8 +456,10 @@ class CronogramaUseCasesTest {
     void ligarADiscursivaSoNumEditalCriaAFaseSoNele() {
         int id = cronogramaComDoisEditais();
         editar.salvar(IDECAN, id, null, salvar(0, OK, null), "Yuri");
+        ponte.sincronizarCronograma(IDECAN, id);
         Edicao comDiscursiva = new Edicao(Set.of("S12"), OK.dataEdital(), Map.of(), Set.of(), Set.of());
         editar.salvar(IDECAN, id, 10, salvar(doEdital(id, 10).versao(), comDiscursiva, null), "Ana");
+        ponte.sincronizarEdital(IDECAN, 10);
 
         assertEquals("Prova discursiva", faseDoModulo(10, ModuloDeExecucao.S12).nome());
         int vinculo11 = cronogramas.doEdital(IDECAN, 11).orElseThrow().id();
@@ -477,6 +470,7 @@ class CronogramaUseCasesTest {
     void publicacaoDoCronogramaNaoAceitaDataManual() {
         int id = cronogramaComDoisEditais();
         editar.salvar(IDECAN, id, null, salvar(0, OK, null), "Yuri");
+        ponte.sincronizarEdital(IDECAN, 10);
         int faseId = faseDoModulo(10, ModuloDeExecucao.NUCLEO).id();
         int publicacaoId = publicacoes.listarPorFase(IDECAN, faseId).get(0).id();
 

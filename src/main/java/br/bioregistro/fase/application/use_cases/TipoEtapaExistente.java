@@ -27,6 +27,10 @@ final class TipoEtapaExistente {
             throw new RegraDeNegocioException("\"" + tipo.descricao()
                     + "\" é análise de solicitações e não pode ser etapa de fase. Use um tipo de execução.");
         }
+        if (tipo.ehResultadoFinal()) {
+            throw new RegraDeNegocioException(
+                    "\"Resultado Final\" é obrigatória em toda fase e não se escolhe nas opções de fase do grupo.");
+        }
         return tipo;
     }
 }

@@ -246,8 +246,9 @@ class CronogramaControllerTest {
                 .body("calculado.grupos[0].etapas.find { it.codigo == 'P01' }.referencia", is("fim de E04"))
                 .body("status", hasSize(55));
 
+        // Spec 006 RN09b: status de publicação não faz parte do cronograma público
         given().contentType(ContentType.JSON).body("{\"status\": \"FEITO\"}")
-                .when().put(API + "/cronogramas/" + id + "/etapas/P01/status").then().statusCode(200);
+                .when().put(API + "/cronogramas/" + id + "/etapas/P01/status").then().statusCode(409);
 
         String editado = ITEM_P01.replace("Reunião com a comissão", "Reunião com o órgão").replace("\"dias\": 2", "\"dias\": 5");
         given().contentType(ContentType.JSON).body(salvar(1, comItens(editado), null))
@@ -316,39 +317,32 @@ class CronogramaControllerTest {
     @Test
     void marcaStatusPeloFluxo() {
         salvarOk();
+        // Spec 006 RN09b: cronograma público não marca publicação
         given().contentType(ContentType.JSON).body("{\"status\": \"FEITO\"}")
                 .when().put(API + "/cronogramas/" + id + "/etapas/E04/status")
-                .then().statusCode(200)
-                .body("status.find { it.codigo == 'E04' }.manual", is("FEITO"));
-
-        // atividade não tem "Publicado"
-        given().contentType(ContentType.JSON).body("{\"status\": \"PUBLICADO\"}")
-                .when().put(API + "/cronogramas/" + id + "/etapas/E04/status").then().statusCode(400);
-        // publicação segue A fazer → … → Publicado
+                .then().statusCode(409).body("message", containsString("não marca publicação"));
         given().contentType(ContentType.JSON).body("{\"status\": \"PRONTO_PARA_PUBLICAR\"}")
                 .when().put(API + "/cronogramas/" + id + "/etapas/E16/status")
-                .then().statusCode(200).body("status.find { it.codigo == 'E16' }.manual", is("PRONTO_PARA_PUBLICAR"));
+                .then().statusCode(409);
     }
 
     @Test
     void recursoSoEntraEmAnalisePeloGatilhoDepoisDeAbrir() {
         salvarOk();
         given().contentType(ContentType.JSON).body("{\"status\": \"EM_ANALISE\"}")
-                .when().put(API + "/cronogramas/" + id + "/etapas/E17/status").then().statusCode(400);
+                .when().put(API + "/cronogramas/" + id + "/etapas/E17/status").then().statusCode(409);
         given().when().post(API + "/cronogramas/" + id + "/etapas/E17/primeiro-recurso")
-                .then().statusCode(400).body("message", containsString("ainda não abriu"));
-        given().when().get(API + "/cronogramas/" + id)
-                .then().body("status.find { it.codigo == 'E17' }.podeRegistrar", is(false));
+                .then().statusCode(409).body("message", containsString("não registra"));
     }
 
     @Test
     void statusDeEtapaInexistenteOuSemCorpo() {
         given().contentType(ContentType.JSON).body("{\"status\": \"FEITO\"}")
-                .when().put(API + "/cronogramas/" + id + "/etapas/E99/status").then().statusCode(404);
+                .when().put(API + "/cronogramas/" + id + "/etapas/E99/status").then().statusCode(409);
         given().contentType(ContentType.JSON).body("{}")
-                .when().put(API + "/cronogramas/" + id + "/etapas/E04/status").then().statusCode(400);
+                .when().put(API + "/cronogramas/" + id + "/etapas/E04/status").then().statusCode(409);
         given().when().post(API + "/cronogramas/" + id + "/etapas/E04/primeiro-recurso")
-                .then().statusCode(400).body("message", containsString("não é de recurso"));
+                .then().statusCode(409);
     }
 
     @Test
