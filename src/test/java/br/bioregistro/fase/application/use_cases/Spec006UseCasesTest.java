@@ -13,13 +13,18 @@ import br.bioregistro.fase.domain.model.TipoPublicacao;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static br.bioregistro.fase.application.use_cases.Cenario.etapa;
 import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.BIOPSICOSSOCIAL;
+import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.GABARITO_PRELIMINAR;
 import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.HETEROIDENTIFICACAO;
 import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.PROVA_DISCURSIVA;
 import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.PROVA_OBJETIVA;
+import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.RESULTADO_OFICIAL;
+import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.RESULTADO_PRELIMINAR;
 import static br.bioregistro.fase.domain.model.Instituicao.IDECAN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -113,10 +118,83 @@ class Spec006UseCasesTest {
     void overrideDeConfigNaoAfetaOutroEdital() {
         c.comEdital(IDECAN, 20);
         ConfiguracoesDePublicacao uc = new ConfiguracoesDePublicacao(c.configsPublicacao, c.tipos, c.fases);
-        c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(2, "E16", 0, 3, FormatoDePublicacao.LISTA_PDF));
-        uc.salvarEdital(IDECAN, 10, new ConfiguracaoDePublicacao(2, "E16", 0, 7, FormatoDePublicacao.TABELA_LINK));
+        c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(2, "prova_objetiva", 0, 3, FormatoDePublicacao.LISTA_PDF));
+        uc.salvarEdital(IDECAN, 10, new ConfiguracaoDePublicacao(2, "prova_objetiva", 0, 7, FormatoDePublicacao.TABELA_LINK));
         assertEquals(7, uc.efetiva(IDECAN, 10, 2).diasNoAr());
         assertEquals(3, uc.efetiva(IDECAN, 20, 2).diasNoAr());
+    }
+
+    @Test
+    void listarEfetivasUsaPadraoEOverride() {
+        ConfiguracoesDePublicacao uc = new ConfiguracoesDePublicacao(c.configsPublicacao, c.tipos, c.fases);
+        c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(GABARITO_PRELIMINAR.id(), "prova_objetiva", 1, 3,
+                FormatoDePublicacao.LISTA_PDF));
+        c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(RESULTADO_PRELIMINAR.id(), null, 0, 5,
+                FormatoDePublicacao.LISTA_PDF));
+        uc.salvarEdital(IDECAN, 10, new ConfiguracaoDePublicacao(GABARITO_PRELIMINAR.id(), "prova_objetiva", 1, 9,
+                FormatoDePublicacao.TABELA_LINK));
+        List<ConfiguracaoDePublicacao> lista = uc.listarEfetivas(IDECAN, 10);
+        assertEquals(2, lista.size());
+        assertEquals(9, lista.stream().filter(x -> x.tipoPublicacaoId().equals(GABARITO_PRELIMINAR.id()))
+                .findFirst().orElseThrow().diasNoAr());
+        assertEquals(5, lista.stream().filter(x -> x.tipoPublicacaoId().equals(RESULTADO_PRELIMINAR.id()))
+                .findFirst().orElseThrow().diasNoAr());
+    }
+
+    @Test
+    void datasDaEtapaDerivamPeriodosDosEspacosVazios() {
+        c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(GABARITO_PRELIMINAR.id(), "prova_objetiva", 7, 14,
+                FormatoDePublicacao.LISTA_PDF));
+        c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(RESULTADO_PRELIMINAR.id(), null, 0, 5,
+                FormatoDePublicacao.LISTA_PDF));
+        c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(RESULTADO_OFICIAL.id(), null, 5, 30,
+                FormatoDePublicacao.LISTA_PDF));
+
+        int faseId = c.criarFase().executar(IDECAN, 10, Cenario.fase("Obj", 1)).id();
+        OffsetDateTime fimProva = OffsetDateTime.parse("2026-11-10T23:59:00-03:00");
+        EtapaResponse criada = c.criarEtapa().executar(IDECAN, faseId,
+                new EtapaRequest("Obj", PROVA_OBJETIVA, null,
+                        OffsetDateTime.parse("2026-11-10T08:00:00-03:00"), fimProva,
+                        null, null, null, null, null, null, null, null, null, null, null, null, null, null));
+
+        Publicacao gabarito = c.publicacoes.listarPorEtapa(IDECAN, criada.id()).stream()
+                .filter(p -> "gabarito_preliminar".equals(p.tipo().valor())).findFirst().orElseThrow();
+        assertEquals(LocalDate.of(2026, 11, 17), gabarito.visualizacaoInicio().toLocalDate());
+        assertEquals(LocalDate.of(2026, 11, 30), gabarito.visualizacaoFim().toLocalDate());
+
+        Publicacao prelim = c.publicacoes.listarPorEtapa(IDECAN, criada.id()).stream()
+                .filter(p -> "resultado_preliminar".equals(p.tipo().valor())).findFirst().orElseThrow();
+        assertEquals(LocalDate.of(2026, 11, 10), prelim.visualizacaoInicio().toLocalDate());
+        assertEquals(LocalDate.of(2026, 11, 14), prelim.visualizacaoFim().toLocalDate());
+
+        Publicacao oficial = c.publicacoes.listarPorEtapa(IDECAN, criada.id()).stream()
+                .filter(p -> "resultado_oficial".equals(p.tipo().valor())).findFirst().orElseThrow();
+        assertEquals(LocalDate.of(2026, 11, 15), oficial.visualizacaoInicio().toLocalDate());
+        assertEquals(LocalDate.of(2026, 12, 14), oficial.visualizacaoFim().toLocalDate());
+    }
+
+    @Test
+    void espacoJaPreenchidoNaoESobrescritoPelaConfig() {
+        c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(GABARITO_PRELIMINAR.id(), "prova_objetiva", 1, 3,
+                FormatoDePublicacao.LISTA_PDF));
+        int faseId = c.criarFase().executar(IDECAN, 10, Cenario.fase("Obj", 1)).id();
+        EtapaResponse criada = c.criarEtapa().executar(IDECAN, faseId, etapa("Obj", PROVA_OBJETIVA, null));
+        Publicacao gabarito = c.publicacoes.listarPorEtapa(IDECAN, criada.id()).stream()
+                .filter(p -> "gabarito_preliminar".equals(p.tipo().valor())).findFirst().orElseThrow();
+        OffsetDateTime manualIni = OffsetDateTime.parse("2026-12-01T00:00:00-03:00");
+        OffsetDateTime manualFim = OffsetDateTime.parse("2026-12-05T23:59:00-03:00");
+        c.publicacoes.salvar(IDECAN, gabarito.comDatas(manualIni, manualIni, manualFim,
+                manualIni, manualFim));
+
+        c.atualizarEtapa().executar(IDECAN, criada.id(),
+                new EtapaRequest("Obj", PROVA_OBJETIVA, null,
+                        OffsetDateTime.parse("2026-11-10T08:00:00-03:00"),
+                        OffsetDateTime.parse("2026-11-10T23:59:00-03:00"),
+                        null, null, null, null, null, null, null, null, null, null, null, null, null, null));
+
+        Publicacao apos = c.publicacoes.listarPorEtapa(IDECAN, criada.id()).stream()
+                .filter(p -> "gabarito_preliminar".equals(p.tipo().valor())).findFirst().orElseThrow();
+        assertEquals(LocalDate.of(2026, 12, 1), apos.visualizacaoInicio().toLocalDate());
     }
 
     @Test

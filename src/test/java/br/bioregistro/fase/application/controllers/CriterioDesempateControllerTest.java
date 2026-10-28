@@ -37,16 +37,18 @@ class CriterioDesempateControllerTest {
         criar(idoso()).statusCode(201)
                 .body("ordem", is(1))
                 .body("faseId", is(fase))
-                .body("tipo", is("IDADE"))
-                .body("faseAplicacao", is("AMBAS"))
-                .body("referencia", nullValue());
-        criar(disciplina("  Direito Constitucional  ")).statusCode(201)
+                .body("tipo", is("idade"))
+                .body("direcao", is("desc"))
+                .body("baseLegal", is("idoso"))
+                .body("fonte", nullValue());
+        criar(notaDisciplina("  conhecimentos_especificos  ")).statusCode(201)
                 .body("ordem", is(2))
-                .body("referencia", is("Direito Constitucional"));
+                .body("fonte", is("conhecimentos_especificos"));
 
         given().when().get(url).then().statusCode(200)
                 .body("ordem", contains(1, 2))
-                .body("tipo", contains("IDADE", "DISCIPLINA"));
+                .body("tipo", contains("idade", "nota"))
+                .body("label", contains("Idade igual ou superior a 60 anos", "Maior nota em Conhecimentos Específicos"));
     }
 
     @Test
@@ -55,23 +57,22 @@ class CriterioDesempateControllerTest {
         criar(idoso()).statusCode(201);
 
         given().when().get(urlDa(outra)).then().statusCode(200).body("$", hasSize(0));
-        given().contentType(ContentType.JSON).body(sorteio()).when().post(urlDa(outra)).then().statusCode(201)
+        given().contentType(ContentType.JSON).body(jurado()).when().post(urlDa(outra)).then().statusCode(201)
                 .body("ordem", is(1));
-        given().when().get(url).then().statusCode(200).body("tipo", contains("IDADE"));
+        given().when().get(url).then().statusCode(200).body("tipo", contains("idade"));
     }
 
     @Test
     void copiaSubstituindoOsCriteriosDoDestino() {
-        // outra prova objetiva no mesmo edital (fase do modelo anterior, criada à mão)
         int outra = FaseEtapaControllerTest.criarFase(10, "Outra", 9);
         FaseEtapaControllerTest.criarEtapa(outra, "Prova objetiva", PROVA_OBJETIVA);
-        given().contentType(ContentType.JSON).body(sorteio()).when().post(urlDa(outra)).then().statusCode(201);
+        given().contentType(ContentType.JSON).body(jurado()).when().post(urlDa(outra)).then().statusCode(201);
         criar(idoso()).statusCode(201);
-        criar(disciplina("Direito Civil")).statusCode(201);
+        criar(notaDisciplina("lingua_portuguesa")).statusCode(201);
 
         copiar("[" + outra + "]").statusCode(204);
         given().when().get(urlDa(outra)).then().statusCode(200)
-                .body("tipo", contains("IDADE", "DISCIPLINA"))
+                .body("tipo", contains("idade", "nota"))
                 .body("ordem", contains(1, 2))
                 .body("faseId", contains(outra, outra));
         copiar("[]").statusCode(400);
@@ -81,31 +82,31 @@ class CriterioDesempateControllerTest {
     @Test
     void atualizaSemMudarAOrdem() {
         criar(idoso()).statusCode(201);
-        int id = criar(disciplina("Direito Civil")).statusCode(201).extract().path("id");
+        int id = criar(notaDisciplina("direito_civil")).statusCode(201).extract().path("id");
 
-        given().contentType(ContentType.JSON).body(disciplina("Direito Ambiental"))
+        given().contentType(ContentType.JSON).body(notaDisciplina("direito_ambiental"))
                 .when().put("/v1/idecan/criterios-desempate/" + id).then().statusCode(200)
                 .body("ordem", is(2))
-                .body("referencia", is("Direito Ambiental"));
+                .body("fonte", is("direito_ambiental"));
     }
 
     @Test
     void excluirRenumeraOsSeguintes() {
         int primeiro = criar(idoso()).statusCode(201).extract().path("id");
-        criar(disciplina("Direito Civil")).statusCode(201);
-        criar(sorteio()).statusCode(201);
+        criar(notaDisciplina("direito_civil")).statusCode(201);
+        criar(jurado()).statusCode(201);
 
         given().when().delete("/v1/idecan/criterios-desempate/" + primeiro).then().statusCode(204);
         given().when().get(url).then().statusCode(200)
                 .body("ordem", contains(1, 2))
-                .body("tipo", contains("DISCIPLINA", "SORTEIO"));
+                .body("tipo", contains("nota", "booleano"));
     }
 
     @Test
     void reordenaComTodosOsCriterios() {
         int a = criar(idoso()).statusCode(201).extract().path("id");
-        int b = criar(disciplina("Direito Civil")).statusCode(201).extract().path("id");
-        int c = criar(sorteio()).statusCode(201).extract().path("id");
+        int b = criar(notaDisciplina("direito_civil")).statusCode(201).extract().path("id");
+        int c = criar(jurado()).statusCode(201).extract().path("id");
 
         reordenar("[" + c + ", " + a + ", " + b + "]").statusCode(200)
                 .body("id", contains(c, a, b))
@@ -116,11 +117,13 @@ class CriterioDesempateControllerTest {
 
     @Test
     void validaOsCamposObrigatorios() {
-        criar("{\"tipo\": \"NOTA\", \"regra\": \"MAIOR\", \"faseAplicacao\": \"AMBAS\"}").statusCode(400);
-        criar("{\"criterio\": \"Maior nota\", \"tipo\": \"DISCIPLINA\", \"regra\": \"MAIOR\", \"faseAplicacao\": \"AMBAS\"}")
-                .statusCode(400);
-        criar("{\"criterio\": \"x\", \"tipo\": \"QUALQUER\", \"regra\": \"MAIOR\", \"faseAplicacao\": \"AMBAS\"}")
-                .statusCode(400);
+        criar("{\"tipo\": \"nota\", \"direcao\": \"desc\", \"fonte\": \"prova_objetiva\"}").statusCode(400);
+        criar("""
+                {"label": "Maior nota", "tipo": "nota", "direcao": "desc"}
+                """).statusCode(400);
+        criar("""
+                {"label": "x", "tipo": "qualquer", "direcao": "desc"}
+                """).statusCode(400);
         given().when().get(url).then().statusCode(200).body("$", hasSize(0));
     }
 
@@ -160,19 +163,21 @@ class CriterioDesempateControllerTest {
 
     private static String idoso() {
         return """
-                {"criterio": "Idade igual ou superior a 60 anos", "tipo": "IDADE", "regra": "MAIOR",
-                 "faseAplicacao": "AMBAS", "fundamentacao": "Estatuto da Pessoa Idosa, art. 27",
-                 "observacao": "Idade no último dia de inscrição", "referencia": "  "}""";
+                {"label": "Idade igual ou superior a 60 anos", "tipo": "idade", "direcao": "desc",
+                 "condicao": {"operador": ">=", "valor": 60, "unidade": "anos"},
+                 "dataReferencia": "ultimo_dia_inscricao", "fonte": null, "baseLegal": "idoso"}""";
     }
 
-    private static String disciplina(String nome) {
+    private static String notaDisciplina(String fonte) {
         return """
-                {"criterio": "Maior nota na disciplina", "tipo": "DISCIPLINA", "regra": "MAIOR",
-                 "faseAplicacao": "PROVA_OBJETIVA", "referencia": "%s", "fundamentacao": "14.3"}""".formatted(nome);
+                {"label": "Maior nota em Conhecimentos Específicos", "tipo": "nota", "direcao": "desc",
+                 "condicao": null, "dataReferencia": null, "fonte": "%s", "baseLegal": null}""".formatted(fonte);
     }
 
-    private static String sorteio() {
+    private static String jurado() {
         return """
-                {"criterio": "Sorteio público", "tipo": "SORTEIO", "regra": "SIM_NAO", "faseAplicacao": "RESULTADO_FINAL"}""";
+                {"label": "Ter exercido a função de jurado", "tipo": "booleano", "direcao": "desc",
+                 "condicao": {"operador": "==", "valor": true},
+                 "dataReferencia": "ultimo_dia_inscricao", "fonte": null, "baseLegal": "jurado"}""";
     }
 }

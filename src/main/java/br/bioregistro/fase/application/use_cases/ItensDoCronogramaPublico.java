@@ -1,11 +1,13 @@
 package br.bioregistro.fase.application.use_cases;
 
+import br.bioregistro.fase.domain.exception.NaoEncontradoException;
 import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 import br.bioregistro.fase.domain.model.Instituicao;
 import br.bioregistro.fase.domain.model.cronograma.CronogramaPublico;
 import br.bioregistro.fase.domain.model.cronograma.ItemCronogramaPublico;
 import br.bioregistro.fase.domain.model.cronograma.PdfCronogramaPublico;
 import br.bioregistro.fase.domain.port.CronogramaPublicoItemRepository;
+import br.bioregistro.fase.domain.port.FaseRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.Clock;
@@ -15,28 +17,30 @@ import java.util.List;
 
 /**
  * Cronograma público do edital (Anexo II): lista de atividades com datas absolutas + PDF.
- * Sem ponte com fase (RN09c). Pode ser alterado e salvo novamente a qualquer momento
+ * Sem ponte com fase (RN-CP-03 / RN09c). Pode ser alterado e salvo novamente a qualquer momento
  * ({@link #salvar} substitui a lista completa).
  */
 @ApplicationScoped
 public class ItensDoCronogramaPublico {
 
     private final CronogramaPublicoItemRepository itens;
+    private final FaseRepository fases;
     private final Clock relogio;
 
-    public ItensDoCronogramaPublico(CronogramaPublicoItemRepository itens, Clock relogio) {
+    public ItensDoCronogramaPublico(CronogramaPublicoItemRepository itens, FaseRepository fases, Clock relogio) {
         this.itens = itens;
+        this.fases = fases;
         this.relogio = relogio;
     }
 
     public List<ItemCronogramaPublico> listar(Instituicao instituicao, int editalId) {
-        validarEdital(editalId);
+        exigirEdital(instituicao, editalId);
         return itens.listar(instituicao, editalId);
     }
 
     public List<ItemCronogramaPublico> salvar(Instituicao instituicao, int editalId,
                                               List<ItemCronogramaPublico> novos) {
-        validarEdital(editalId);
+        exigirEdital(instituicao, editalId);
         List<ItemCronogramaPublico> lista = novos == null ? List.of() : novos;
         int ordem = 1;
         List<ItemCronogramaPublico> normalizados = new ArrayList<>();
@@ -48,11 +52,13 @@ public class ItensDoCronogramaPublico {
     }
 
     public CronogramaPublico retrato(Instituicao instituicao, int editalId) {
-        validarEdital(editalId);
+        exigirEdital(instituicao, editalId);
+        String nome = fases.nomeDoEdital(instituicao, editalId).orElse("Edital " + editalId);
+        String rotuloEdital = "Edital " + editalId;
         List<ItemCronogramaPublico> lista = itens.listar(instituicao, editalId);
         return CronogramaPublico.deItens(
-                "Edital " + editalId,
-                List.of("Edital " + editalId),
+                nome,
+                List.of(rotuloEdital),
                 OffsetDateTime.now(relogio),
                 lista);
     }
@@ -61,9 +67,12 @@ public class ItensDoCronogramaPublico {
         return PdfCronogramaPublico.gerar(retrato(instituicao, editalId));
     }
 
-    private static void validarEdital(int editalId) {
+    private void exigirEdital(Instituicao instituicao, int editalId) {
         if (editalId <= 0) {
             throw new RegraDeNegocioException("Informe o edital do cronograma público.");
+        }
+        if (!fases.editalExiste(instituicao, editalId)) {
+            throw new NaoEncontradoException("Edital", editalId);
         }
     }
 }

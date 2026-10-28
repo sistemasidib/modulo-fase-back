@@ -27,16 +27,18 @@ public class CriarEtapa {
     private final EspacosDePublicacao espacos;
     private final CriterioCorrecaoRepository criterios;
     private final ResultadoFinalDaFase resultadoFinal;
+    private final AplicarConfigPublicacaoNaEtapa aplicarConfig;
 
     public CriarEtapa(FaseRepository fases, EtapaRepository etapas, TipoRepository tipos,
                       EspacosDePublicacao espacos, CriterioCorrecaoRepository criterios,
-                      ResultadoFinalDaFase resultadoFinal) {
+                      ResultadoFinalDaFase resultadoFinal, AplicarConfigPublicacaoNaEtapa aplicarConfig) {
         this.fases = fases;
         this.etapas = etapas;
         this.tipos = tipos;
         this.espacos = espacos;
         this.criterios = criterios;
         this.resultadoFinal = resultadoFinal;
+        this.aplicarConfig = aplicarConfig;
     }
 
     @Transactional
@@ -55,6 +57,7 @@ public class CriarEtapa {
         Etapa criada = etapas.salvar(instituicao, etapa);
         espacos.criarParaEtapa(instituicao, faseId, criada.id(), criada.tipoId());
         espacos.ajustarEspacoDaModalidade(instituicao, faseId, criada.id(), null, criada.modalidade());
+        aplicarConfig.executar(instituicao, criada);
         resultadoFinal.garantir(instituicao, faseId);
         espacos.sincronizarResultadoDaFase(instituicao, faseId);
         return EtapaResponse.de(criada, pontuacaoMaxima(instituicao, criada.id()));

@@ -12,6 +12,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
+import java.util.List;
+
 @Path("/v1/{instituicao}")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -28,6 +30,15 @@ public class ConfigPublicacaoController {
     public ConfigPublicacaoResponse padrao(@PathParam("instituicao") Instituicao instituicao,
                                            @PathParam("tipoPublicacaoId") int tipoPublicacaoId) {
         return ConfigPublicacaoResponse.de(configs.padrao(instituicao, tipoPublicacaoId));
+    }
+
+    @GET
+    @Path("editais/{editalId}/config-publicacoes")
+    public List<ConfigPublicacaoResponse> listarEfetivas(@PathParam("instituicao") Instituicao instituicao,
+                                                         @PathParam("editalId") int editalId) {
+        return configs.listarEfetivas(instituicao, editalId).stream()
+                .map(ConfigPublicacaoResponse::de)
+                .toList();
     }
 
     @GET

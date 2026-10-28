@@ -78,13 +78,15 @@ public record Parametros(Map<String, Integer> valores) {
     private static Map<String, Integer> padrao() {
         Map<String, Integer> p = new LinkedHashMap<>();
         p.put(INICIO_INSCRICOES, 1);
-        p.put(DURACAO_INSCRICOES, 41);
-        p.put(ISENCAO, 1);
+        /* Karen 27/10/2026: inscrição 30 dias; isenção 2 dias (antes: calibração 41 / isenção 1). */
+        p.put(DURACAO_INSCRICOES, 30);
+        p.put(ISENCAO, 2);
         p.put(PAGAMENTO, 1);
         p.put(INTERVALO_PROVA, 34);
-        p.put(GABARITO_APOS_PROVA, 1);
-        p.put(RECURSO_GABARITO, 2);
-        p.put(RECURSO_DEMAIS, 1);
+        /* Karen Bloco 1: gabarito 1–2 sem. → 7; recurso 2–7 → 5; locais −4 no esqueleto. */
+        p.put(GABARITO_APOS_PROVA, 7);
+        p.put(RECURSO_GABARITO, 5);
+        p.put(RECURSO_DEMAIS, 5);
         p.put(RM01_MINIMO, 30);
         return java.util.Collections.unmodifiableMap(p);
     }

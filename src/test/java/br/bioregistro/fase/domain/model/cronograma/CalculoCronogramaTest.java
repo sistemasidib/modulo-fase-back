@@ -61,7 +61,7 @@ class CalculoCronogramaTest {
     void locaisDeProvaSaem9DiasAntesDaProva() {
         for (LocalDate edital : List.of(LocalDate.of(2026, 11, 30), LocalDate.of(2026, 12, 1))) {
             CronogramaCalculado c = calcular(edital(edital));
-            assertEquals(etapa(c, "E15").inicio().minusDays(9), etapa(c, "E14").inicio(), edital.toString());
+            assertEquals(etapa(c, "E15").inicio().minusDays(4), etapa(c, "E14").inicio(), edital.toString());
         }
     }
 
@@ -84,21 +84,21 @@ class CalculoCronogramaTest {
         CronogramaCalculado c = calcular(edital(LocalDate.of(2026, 11, 30)));
         assertTrue(c.materializado());
         assertEquals(LocalDate.of(2026, 12, 1), etapa(c, "E04").inicio());
-        assertEquals(LocalDate.of(2027, 1, 11), etapa(c, "E04").fim());
-        assertEquals(LocalDate.of(2027, 2, 5), etapa(c, "E14").inicio());
-        assertEquals(LocalDate.of(2027, 2, 14), etapa(c, "E15").inicio());
+        assertEquals(LocalDate.of(2026, 12, 31), etapa(c, "E04").fim());
+        assertEquals(LocalDate.of(2027, 1, 30), etapa(c, "E14").inicio());
+        assertEquals(LocalDate.of(2027, 2, 3), etapa(c, "E15").inicio());
         assertFalse(c.provaInformada());
-        assertEquals(LocalDate.of(2027, 2, 15), etapa(c, "E16").inicio());
-        assertEquals(LocalDate.of(2027, 2, 15), etapa(c, "E17").inicio());
-        assertEquals(LocalDate.of(2027, 2, 17), etapa(c, "E17").fim());
+        assertEquals(LocalDate.of(2027, 2, 10), etapa(c, "E16").inicio());
+        assertEquals(LocalDate.of(2027, 2, 10), etapa(c, "E17").inicio());
+        assertEquals(LocalDate.of(2027, 2, 15), etapa(c, "E17").fim());
     }
 
     /** Spec 005, RN09: sem data da prova, a E15 é sugestão provisória e não vai ao domingo. */
     @Test
     void cb05_provaSugeridaNaoEDeslocada() {
         CronogramaCalculado c = calcular(edital(LocalDate.of(2026, 12, 1)));
-        assertEquals(LocalDate.of(2027, 1, 12), etapa(c, "E04").fim());
-        assertEquals(LocalDate.of(2027, 2, 15), etapa(c, "E15").inicio()); // segunda
+        assertEquals(LocalDate.of(2027, 1, 1), etapa(c, "E04").fim());
+        assertEquals(LocalDate.of(2027, 2, 4), etapa(c, "E15").inicio()); // quinta (sugestão; não desloca)
         assertEquals(List.of("data provisória · informe a data da prova"), etapa(c, "E15").avisos());
         assertFalse(checagem(c, "PROVA_INFORMADA").cumprida());
         assertFalse(c.checagens().viola());
@@ -107,17 +107,18 @@ class CalculoCronogramaTest {
     /** Spec 005, RN09: a prova informada fica no dia informado, mesmo no sábado; o resto conta dela. */
     @Test
     void provaInformadaEmSabadoFicaNoSabado() {
-        LocalDate sabado = LocalDate.of(2027, 2, 20);
+        // sábado a ~37 dias do fim das inscrições (faixa histórica E15: 27–40)
+        LocalDate sabado = LocalDate.of(2027, 2, 6);
         CronogramaCalculado c = calcular(new Edicao(Set.of(), LocalDate.of(2026, 12, 1), Map.of(), Set.of(), Set.of(),
                 List.of(), sabado));
         assertTrue(c.provaInformada());
         assertEquals(sabado, etapa(c, "E15").inicio());
         assertTrue(etapa(c, "E15").avisos().isEmpty());
-        assertEquals(39, etapa(c, "E15").dias());
-        assertEquals(LocalDate.of(2027, 2, 11), etapa(c, "E14").inicio());
-        assertEquals(LocalDate.of(2027, 2, 21), etapa(c, "E16").inicio());
-        assertEquals(LocalDate.of(2027, 2, 23), etapa(c, "E17").fim());
-        assertEquals("39 dias", checagem(c, "RM-01").detalhe());
+        assertEquals(36, etapa(c, "E15").dias());
+        assertEquals(LocalDate.of(2027, 2, 2), etapa(c, "E14").inicio());
+        assertEquals(LocalDate.of(2027, 2, 13), etapa(c, "E16").inicio());
+        assertEquals(LocalDate.of(2027, 2, 18), etapa(c, "E17").fim());
+        assertEquals("36 dias", checagem(c, "RM-01").detalhe());
         assertTrue(checagem(c, "PROVA_INFORMADA").cumprida());
         assertFalse(c.checagens().viola());
     }
@@ -143,7 +144,7 @@ class CalculoCronogramaTest {
     }
 
     @Test
-    void cb06_gabaritoNoDiaSeguinteERecursoDe2Dias() {
+    void cb06_gabaritoApos7DiasERecursoDe5Dias() {
         // prova em 10/08: forçar a E15 nessa data a partir de um edital qualquer
         CronogramaCalculado base = calcular(edital(LocalDate.of(2027, 5, 1)));
         int provaRel = etapa(base, "E15").inicioRelativo();
@@ -151,16 +152,16 @@ class CalculoCronogramaTest {
         CronogramaCalculado c = calcular(edital(edital));
         EtapaCalculada prova = etapa(c, "E15");
         LocalDate dataProva = prova.inicio();
-        assertEquals(dataProva.plusDays(1), etapa(c, "E16").inicio());
+        assertEquals(dataProva.plusDays(7), etapa(c, "E16").inicio());
         assertEquals(etapa(c, "E16").inicio(), etapa(c, "E17").inicio());
-        assertEquals(dataProva.plusDays(3), etapa(c, "E17").fim());
+        assertEquals(dataProva.plusDays(12), etapa(c, "E17").fim());
     }
 
     @Test
     void valoresDaRegraVemDosParametros() {
         Parametros dez = new Parametros(Map.of(Parametros.GABARITO_APOS_PROVA, 10));
         CronogramaCalculado c = CalculoCronograma.calcular(ESQ, dez, edital(LocalDate.of(2026, 11, 30)), HOJE);
-        assertEquals(LocalDate.of(2027, 2, 24), etapa(c, "E16").inicio());
+        assertEquals(LocalDate.of(2027, 2, 13), etapa(c, "E16").inicio());
     }
 
     @Test
@@ -191,9 +192,9 @@ class CalculoCronogramaTest {
                 new Mudanca("E04", Mudanca.Campo.DURACAO, 45));
         assertTrue(previa.etapasMovidas() > 0);
         assertEquals("E04", previa.itens().get(0).etapaCodigo());
-        assertEquals("41", previa.itens().get(0).antes());
+        assertEquals("30", previa.itens().get(0).antes());
         assertTrue(previa.itens().stream().anyMatch(i -> i.etapaCodigo().equals("E10")));
-        // prova sugerida: fim 12/01 → 16/01 leva a prova de 15/02 a 19/02, e a E14 junto
+        // prova sugerida: com duração 45 nas inscrições a cascata move E15 e E14
         assertTrue(previa.itens().stream().anyMatch(i -> i.etapaCodigo().equals("E15")));
         assertTrue(previa.itens().stream().anyMatch(i -> i.etapaCodigo().equals("E14")));
         assertEquals(45, previa.edicao().ajuste("E04").duracao());
@@ -224,7 +225,7 @@ class CalculoCronogramaTest {
         Edicao alterada = edital(null).comAjuste("E14", new Edicao.Ajuste(-7, null));
         assertTrue(etapa(calcular(alterada), "E14").alterada());
         Previa volta = CalculoCronograma.prever(ESQ, PADRAO, alterada,
-                new Mudanca("E14", Mudanca.Campo.DIAS, -9));
+                new Mudanca("E14", Mudanca.Campo.DIAS, -4));
         assertNull(volta.edicao().ajuste("E14"));
     }
 
@@ -264,8 +265,8 @@ class CalculoCronogramaTest {
 
     @Test
     void avisaFimDeSemanaEFaixaHistorica() {
-        // edital 05/12/2026 (sáb): E04 termina 16/01/2027 (sáb); E10 = fim E04 + 1 = 17/01/2027 (dom)
-        CronogramaCalculado c = calcular(edital(LocalDate.of(2026, 12, 5)));
+        // edital 16/12/2026: E04 inicia 17/12, termina 16/01/2027 (sáb); E10 = 17/01/2027 (dom)
+        CronogramaCalculado c = calcular(edital(LocalDate.of(2026, 12, 16)));
         assertTrue(etapa(c, "E10").avisos().stream().anyMatch(a -> a.startsWith("cai em dom")));
 
         Edicao fora = edital(null).comAjuste("E14", new Edicao.Ajuste(60, null));

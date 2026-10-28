@@ -16,6 +16,9 @@
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.3</surefire-plugin.version>
         <bio.registro.version>9.9.9.9</bio.registro.version>
+        <!-- quarkus:dev sem JDWP por padrão (evita auto-attach falho no Cursor). -->
+        <debug>false</debug>
+        <suspend>false</suspend>
     </properties>
 
     <dependencyManagement>
@@ -79,6 +82,16 @@
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.platform.version}</version>
                 <extensions>true</extensions>
+                <!--
+                  debug=false no quarkus:dev do terminal: evita JDWP na 5005 e o
+                  "Debugger failed to attach" do Cursor/VS Code (auto-attach).
+                  Para depurar: Run and Debug → "Debug Quarkus" (.vscode/launch.json)
+                  ou ./mvnw quarkus:dev -Ddebug=5005
+                -->
+                <configuration>
+                    <debug>${debug}</debug>
+                    <suspend>${suspend}</suspend>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

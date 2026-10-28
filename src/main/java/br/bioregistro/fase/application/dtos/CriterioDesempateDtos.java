@@ -1,8 +1,8 @@
 package br.bioregistro.fase.application.dtos;
 
 import br.bioregistro.fase.domain.model.CriterioDesempate;
-import br.bioregistro.fase.domain.model.CriterioDesempate.FaseAplicacao;
-import br.bioregistro.fase.domain.model.CriterioDesempate.Regra;
+import br.bioregistro.fase.domain.model.CriterioDesempate.Condicao;
+import br.bioregistro.fase.domain.model.CriterioDesempate.Direcao;
 import br.bioregistro.fase.domain.model.CriterioDesempate.Tipo;
 
 import java.util.List;
@@ -13,13 +13,13 @@ public final class CriterioDesempateDtos {
 
     /** A ordem não vem aqui: o novo vai para o fim e a ordem muda por {@link OrdemRequest}. */
     public record CriterioDesempateRequest(
-            String criterio,
+            String label,
             Tipo tipo,
-            Regra regra,
-            String referencia,
-            FaseAplicacao faseAplicacao,
-            String fundamentacao,
-            String observacao
+            Direcao direcao,
+            Condicao condicao,
+            String dataReferencia,
+            String fonte,
+            String baseLegal
     ) {}
 
     /** Todos os critérios da fase, do 1º ao último. */
@@ -32,17 +32,18 @@ public final class CriterioDesempateDtos {
             int id,
             int faseId,
             int ordem,
-            String criterio,
+            String label,
             Tipo tipo,
-            Regra regra,
-            String referencia,
-            FaseAplicacao faseAplicacao,
-            String fundamentacao,
-            String observacao
+            Direcao direcao,
+            Condicao condicao,
+            String dataReferencia,
+            String fonte,
+            String baseLegal
     ) {
         public static CriterioDesempateResponse de(CriterioDesempate c) {
-            return new CriterioDesempateResponse(c.id(), c.faseId(), c.ordem(), c.criterio(), c.tipo(), c.regra(),
-                    c.referencia(), c.faseAplicacao(), c.fundamentacao(), c.observacao());
+            return new CriterioDesempateResponse(
+                    c.id(), c.faseId(), c.ordem(), c.label(), c.tipo(), c.direcao(),
+                    c.condicao(), c.dataReferencia(), c.fonte(), c.baseLegal());
         }
     }
 }

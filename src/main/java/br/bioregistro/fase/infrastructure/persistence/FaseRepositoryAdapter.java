@@ -63,6 +63,14 @@ public class FaseRepositoryAdapter implements FaseRepository {
     }
 
     @Override
+    public Optional<String> nomeDoEdital(Instituicao instituicao, int editalId) {
+        return switch (instituicao) {
+            case IDECAN -> idecan.nomeDoEdital(editalId);
+            case IDIB -> idib.nomeDoEdital(editalId);
+        };
+    }
+
+    @Override
     public boolean ordemEmUso(Instituicao instituicao, int editalId, short ordem, Integer ignorarFaseId) {
         return switch (instituicao) {
             case IDECAN -> idecan.ordemEmUso(editalId, ordem, ignorarFaseId);

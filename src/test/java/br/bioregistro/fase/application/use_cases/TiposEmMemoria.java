@@ -20,16 +20,16 @@ public class TiposEmMemoria implements TipoRepository {
     public static final int BIOPSICOSSOCIAL = 6;
     public static final int RESULTADO_FINAL = 7;
 
-    static final TipoPublicacao LOCAL_PROVA = new TipoPublicacao(1, "local_prova", "Local de prova", false);
-    static final TipoPublicacao GABARITO_PRELIMINAR =
+    public static final TipoPublicacao LOCAL_PROVA = new TipoPublicacao(1, "local_prova", "Local de prova", false);
+    public static final TipoPublicacao GABARITO_PRELIMINAR =
             new TipoPublicacao(2, "gabarito_preliminar", "Gabarito preliminar", true);
-    static final TipoPublicacao GABARITO_DEFINITIVO =
+    public static final TipoPublicacao GABARITO_DEFINITIVO =
             new TipoPublicacao(3, "gabarito_definitivo", "Gabarito definitivo", false);
-    static final TipoPublicacao RESULTADO_PRELIMINAR =
+    public static final TipoPublicacao RESULTADO_PRELIMINAR =
             new TipoPublicacao(4, "resultado_preliminar", "Resultado preliminar", true);
-    static final TipoPublicacao RESULTADO_OFICIAL =
+    public static final TipoPublicacao RESULTADO_OFICIAL =
             new TipoPublicacao(5, "resultado_oficial", "Resultado oficial", false);
-    static final TipoPublicacao LINK_ACESSO =
+    public static final TipoPublicacao LINK_ACESSO =
             new TipoPublicacao(6, "link_acesso", "Link / instruções de acesso", false);
 
     private static final List<TipoEtapa> TIPOS_ETAPA = List.of(

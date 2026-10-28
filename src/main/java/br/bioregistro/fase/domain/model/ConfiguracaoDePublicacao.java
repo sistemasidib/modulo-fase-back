@@ -5,9 +5,11 @@ import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 import java.time.LocalDate;
 
 /**
- * Configuração de um tipo de publicação: referência no cronograma, dias no ar e formato
- * (spec 006, RN19–RN22). A data de saída continua vindo do cronograma (RN33 da 005); o período
- * de visualização é derivado ({@link #fimDaVisualizacao}).
+ * Configuração de um tipo de publicação: quando sai, dias no ar e formato (spec 006, RN19–RN22).
+ * <p>{@code referenciaCodigo} é o {@code valor} de {@code dom_tipo_etapa} (ex. {@code prova_objetiva});
+ * {@code null} = a própria etapa dona do espaço. A âncora é a data da etapa no módulo-fase
+ * ({@code dataFechamento}, ou {@code dataAbertura} se não houver fechamento). O período de
+ * visualização é derivado ({@link #fimDaVisualizacao}).
  */
 public record ConfiguracaoDePublicacao(
         Integer tipoPublicacaoId,

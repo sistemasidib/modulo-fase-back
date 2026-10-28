@@ -40,16 +40,14 @@ public class CriteriosDeDesempate {
     public CriterioDesempateResponse criar(Instituicao instituicao, int faseId, CriterioDesempateRequest r) {
         exigirFase(instituicao, faseId);
         int ordem = criterios.daFase(instituicao, faseId).size() + 1;
-        CriterioDesempate novo = new CriterioDesempate(null, faseId, ordem, r.criterio(), r.tipo(), r.regra(),
-                r.referencia(), r.faseAplicacao(), r.fundamentacao(), r.observacao());
+        CriterioDesempate novo = de(null, faseId, ordem, r);
         return CriterioDesempateResponse.de(criterios.salvar(instituicao, novo));
     }
 
     @Transactional
     public CriterioDesempateResponse atualizar(Instituicao instituicao, int id, CriterioDesempateRequest r) {
         CriterioDesempate atual = buscar(instituicao, id);
-        CriterioDesempate alterado = new CriterioDesempate(id, atual.faseId(), atual.ordem(), r.criterio(), r.tipo(),
-                r.regra(), r.referencia(), r.faseAplicacao(), r.fundamentacao(), r.observacao());
+        CriterioDesempate alterado = de(id, atual.faseId(), atual.ordem(), r);
         return CriterioDesempateResponse.de(criterios.salvar(instituicao, alterado));
     }
 
@@ -90,10 +88,16 @@ public class CriteriosDeDesempate {
         for (int destino : destinos) {
             criterios.excluirDaFase(instituicao, destino);
             for (CriterioDesempate c : modelo) {
-                criterios.salvar(instituicao, new CriterioDesempate(null, destino, c.ordem(), c.criterio(), c.tipo(),
-                        c.regra(), c.referencia(), c.faseAplicacao(), c.fundamentacao(), c.observacao()));
+                criterios.salvar(instituicao, new CriterioDesempate(
+                        null, destino, c.ordem(), c.label(), c.tipo(), c.direcao(),
+                        c.condicao(), c.dataReferencia(), c.fonte(), c.baseLegal()));
             }
         }
+    }
+
+    private static CriterioDesempate de(Integer id, int faseId, int ordem, CriterioDesempateRequest r) {
+        return new CriterioDesempate(id, faseId, ordem, r.label(), r.tipo(), r.direcao(),
+                r.condicao(), r.dataReferencia(), r.fonte(), r.baseLegal());
     }
 
     private List<CriterioDesempate> numerar(Instituicao instituicao, List<CriterioDesempate> naOrdem) {

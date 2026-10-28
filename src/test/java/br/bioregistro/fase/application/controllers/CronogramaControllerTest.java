@@ -60,8 +60,8 @@ class CronogramaControllerTest {
                 .body("etapas", hasSize(54))
                 .body("modulos", hasSize(6))
                 .body("modulos.find { it.codigo == 'S12' }.etapas", is(3))
-                .body("parametros.find { it.chave == 'gabarito_apos_prova' }.valor", is(1))
-                .body("parametros.find { it.chave == 'recurso_gabarito' }.valor", is(2))
+                .body("parametros.find { it.chave == 'gabarito_apos_prova' }.valor", is(7))
+                .body("parametros.find { it.chave == 'recurso_gabarito' }.valor", is(5))
                 .body("atalhos.'Segurança pública'", hasItem("S14"));
     }
 
@@ -93,11 +93,11 @@ class CronogramaControllerTest {
                 .then().statusCode(200)
                 .body("materializado", is(true))
                 .body("provaInformada", is(false))
-                .body("indicadores.prova", is("2027-02-17"))
-                .body("grupos.etapas.flatten().find { it.codigo == 'E14' }.inicio", is("2027-02-08"))
-                .body("grupos.etapas.flatten().find { it.codigo == 'E16' }.inicio", is("2027-02-18"))
-                .body("grupos.etapas.flatten().find { it.codigo == 'E17' }.inicio", is("2027-02-18"))
-                .body("grupos.etapas.flatten().find { it.codigo == 'E17' }.fim", is("2027-02-20"))
+                .body("indicadores.prova", is("2027-02-06"))
+                .body("grupos.etapas.flatten().find { it.codigo == 'E14' }.inicio", is("2027-02-02"))
+                .body("grupos.etapas.flatten().find { it.codigo == 'E16' }.inicio", is("2027-02-13"))
+                .body("grupos.etapas.flatten().find { it.codigo == 'E17' }.inicio", is("2027-02-13"))
+                .body("grupos.etapas.flatten().find { it.codigo == 'E17' }.fim", is("2027-02-18"))
                 .body("checagens.viola", is(false))
                 .body("checagens.alertas.find { it.codigo == 'PROVA_INFORMADA' }.cumprida", is(false));
 
@@ -112,7 +112,7 @@ class CronogramaControllerTest {
                 .then().statusCode(200)
                 .body("provaInformada", is(true))
                 .body("indicadores.prova", is("2027-02-20"))
-                .body("grupos.etapas.flatten().find { it.codigo == 'E16' }.inicio", is("2027-02-21"));
+                .body("grupos.etapas.flatten().find { it.codigo == 'E16' }.inicio", is("2027-02-27"));
     }
 
     @Test
@@ -132,7 +132,7 @@ class CronogramaControllerTest {
                 .then().statusCode(200)
                 .body("etapasMovidas", greaterThan(0))
                 .body("itens[0].etapaCodigo", is("E04"))
-                .body("itens[0].antes", is("41"))
+                .body("itens[0].antes", is("30"))
                 .body("edicao.ajustes.E04.duracao", is(25));
     }
 

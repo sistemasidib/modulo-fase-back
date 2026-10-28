@@ -13,12 +13,12 @@ class ConfiguracaoDePublicacaoTest {
     @Test
     void diasNoArDevemSerPositivos() {
         assertThrows(RegraDeNegocioException.class,
-                () -> new ConfiguracaoDePublicacao(1, "E15", 1, 0, FormatoDePublicacao.LISTA_PDF));
+                () -> new ConfiguracaoDePublicacao(1, "prova_objetiva", 1, 0, FormatoDePublicacao.LISTA_PDF));
     }
 
     @Test
     void fimDaVisualizacaoSomaDiasNoAr() {
-        ConfiguracaoDePublicacao c = new ConfiguracaoDePublicacao(1, "E15", 1, 5, FormatoDePublicacao.LISTA_PDF);
+        ConfiguracaoDePublicacao c = new ConfiguracaoDePublicacao(1, "prova_objetiva", 1, 5, FormatoDePublicacao.LISTA_PDF);
         assertEquals(LocalDate.of(2026, 10, 25), c.fimDaVisualizacao(LocalDate.of(2026, 10, 21)));
     }
 }

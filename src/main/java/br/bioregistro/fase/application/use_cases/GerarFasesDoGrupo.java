@@ -45,16 +45,19 @@ public class GerarFasesDoGrupo {
     private final TipoRepository tipos;
     private final EspacosDePublicacao espacos;
     private final ResultadoFinalDaFase resultadoFinal;
+    private final AplicarConfigPublicacaoNaEtapa aplicarConfig;
 
     public GerarFasesDoGrupo(GrupoCargoRepository grupos, FaseRepository fases, EtapaRepository etapas,
                              TipoRepository tipos, EspacosDePublicacao espacos,
-                             ResultadoFinalDaFase resultadoFinal) {
+                             ResultadoFinalDaFase resultadoFinal,
+                             AplicarConfigPublicacaoNaEtapa aplicarConfig) {
         this.grupos = grupos;
         this.fases = fases;
         this.etapas = etapas;
         this.tipos = tipos;
         this.espacos = espacos;
         this.resultadoFinal = resultadoFinal;
+        this.aplicarConfig = aplicarConfig;
     }
 
     @Transactional
@@ -118,11 +121,13 @@ public class GerarFasesDoGrupo {
             TipoEtapa tipo = TipoEtapaExistente.exigirNovo(tipos, instituicao, pedida.tipoId());
             String nome = pedida.nome() == null || pedida.nome().isBlank() ? tipo.descricao() : pedida.nome();
             Etapa etapa = etapas.salvar(instituicao, CamposDaEtapa.aplicar(tipos, instituicao,
-                    new Etapa(null, fase.id(), nome, tipo.id(), null, null, null,
+                    new Etapa(null, fase.id(), nome, tipo.id(), null,
+                            pedido.dataAbertura(), pedido.dataFechamento(),
                             null, false, false, false, false, null, null, null, null, null, null, null, null, null),
                     true));
             espacos.criarParaEtapa(instituicao, fase.id(), etapa.id(), tipo.id(), pedida.publicacoes());
             espacos.ajustarEspacoDaModalidade(instituicao, fase.id(), etapa.id(), null, etapa.modalidade());
+            aplicarConfig.executar(instituicao, etapa);
         }
         resultadoFinal.garantir(instituicao, fase.id());
         espacos.sincronizarResultadoDaFase(instituicao, fase.id());
@@ -130,8 +135,9 @@ public class GerarFasesDoGrupo {
     }
 
     private FaseGeradaResponse resposta(Instituicao instituicao, Fase fase) {
-        return new FaseGeradaResponse(FaseResponse.de(fase), etapas.listarPorFase(instituicao, fase.id()).stream()
-                .map(EtapaResponse::de)
-                .toList());
+        return new FaseGeradaResponse(FaseResponse.de(fase),
+                resultadoFinal.comFinalPorUltimo(instituicao, etapas.listarPorFase(instituicao, fase.id())).stream()
+                        .map(EtapaResponse::de)
+                        .toList());
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 public record FaseDoConcursoResponse(int ordem, int tipoId, String valor, String descricao, List<Integer> grupoIds) {
 
     public static FaseDoConcursoResponse de(int ordem, TipoEtapa tipo, List<Integer> grupoIds) {
-        return new FaseDoConcursoResponse(ordem, tipo.id(), tipo.valor(), tipo.descricao(), grupoIds);
+        String descricao = tipo.ehResultadoFinal() ? "Resultado Final" : tipo.descricao();
+        return new FaseDoConcursoResponse(ordem, tipo.id(), tipo.valor(), descricao, grupoIds);
     }
 }

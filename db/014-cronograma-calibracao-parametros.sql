@@ -3,6 +3,7 @@
  * gabarito preliminar publicado (dbo.Documento), medidos em out/2026:
  *
  * duracao_inscricoes   31 → 41   mediana 2025–2026 (P25–P75 34–49)
+ *   (supersedido operacionalmente por db/025: Karen 30 dias)
  * intervalo_prova      43 → 34   fim das inscrições → prova: mediana 34 (P25–P75 27–40)
  * gabarito_apos_prova  15 → 1    gabarito no dia seguinte à prova em 96 de 127 editais; máximo 7
  * rm01_minimo          45 → 30   com 45, mais de 75% dos concursos reais violariam a RM-01

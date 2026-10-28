@@ -55,13 +55,13 @@ INSERT INTO dbo.cronograma_parametro_padrao (chave, valor, descricao)
 SELECT v.chave, v.valor, v.descricao
 FROM (VALUES
     (N'inicio_inscricoes',   1,  N'Início das inscrições (dias depois do edital)'),
-    (N'duracao_inscricoes',  31, N'Duração das inscrições'),
-    (N'isencao',             1,  N'Pedido de isenção da taxa (duração)'),
+    (N'duracao_inscricoes',  30, N'Duração das inscrições (padrão operacional)'),
+    (N'isencao',             2,  N'Pedido de isenção da taxa (duração; padrão 2 dias)'),
     (N'pagamento',           1,  N'Último dia de pagamento (dias depois do fim das inscrições)'),
     (N'intervalo_prova',     43, N'Fim das inscrições → prova objetiva (levada ao domingo seguinte)'),
-    (N'gabarito_apos_prova', 15, N'Gabarito preliminar (dias depois da prova)'),
-    (N'recurso_gabarito',    2,  N'Recurso contra o gabarito (duração; abre no dia da publicação)'),
-    (N'recurso_demais',      1,  N'Demais recursos (duração)'),
+    (N'gabarito_apos_prova', 7,  N'Gabarito preliminar (dias depois da prova; norma 1–2 semanas)'),
+    (N'recurso_gabarito',    5,  N'Recurso contra o gabarito (duração; faixa 2–7)'),
+    (N'recurso_demais',      5,  N'Demais recursos (duração; faixa 2–7)'),
     (N'rm01_minimo',         45, N'RM-01: mínimo entre o fim das inscrições e a prova')
 ) AS v (chave, valor, descricao)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.cronograma_parametro_padrao p WHERE p.chave = v.chave);

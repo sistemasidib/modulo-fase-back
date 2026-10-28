@@ -63,7 +63,7 @@ BEGIN
         tipo_publicacao_id     INT NOT NULL
             CONSTRAINT PK_config_publicacao_padrao PRIMARY KEY
             CONSTRAINT FK_config_publicacao_padrao_tipo REFERENCES dbo.dom_tipo_publicacao (id),
-        referencia_codigo      NVARCHAR(10)  NULL,
+        referencia_codigo      NVARCHAR(40)  NULL,
         dias_apos_referencia   INT           NULL,
         dias_no_ar             INT           NOT NULL,
         formato                NVARCHAR(20)  NOT NULL,
@@ -81,7 +81,7 @@ BEGIN
         edital_id              INT           NOT NULL,
         tipo_publicacao_id     INT           NOT NULL
             CONSTRAINT FK_config_publicacao_edital_tipo REFERENCES dbo.dom_tipo_publicacao (id),
-        referencia_codigo      NVARCHAR(10)  NULL,
+        referencia_codigo      NVARCHAR(40)  NULL,
         dias_apos_referencia   INT           NULL,
         dias_no_ar             INT           NOT NULL,
         formato                NVARCHAR(20)  NOT NULL,

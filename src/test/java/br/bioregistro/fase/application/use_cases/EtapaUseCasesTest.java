@@ -130,14 +130,31 @@ class EtapaUseCasesTest {
     void listaBuscaEExcluiJuntoComEspacosVazios() {
         EtapaResponse criada = c.criarEtapa().executar(IDECAN, faseId, etapa("Prova", PROVA_OBJETIVA, null));
 
-        assertEquals(2, new ListarEtapas(c.fases, c.etapas).executar(IDECAN, faseId).size()); // Prova + Resultado Final
+        var listadas = new ListarEtapas(c.fases, c.etapas, c.resultadoFinal, c.espacos).executar(IDECAN, faseId);
+        assertEquals(2, listadas.size()); // Prova + Resultado Final
+        assertEquals(List.of("Prova", "Resultado Final"), listadas.stream().map(e -> e.nome()).toList());
         assertEquals("Prova", new BuscarEtapa(c.etapas, c.criteriosCorrecao).executar(IDECAN, criada.id()).nome());
 
         c.excluirEtapa().executar(IDECAN, criada.id());
         assertTrue(c.etapas.buscar(IDECAN, criada.id()).isEmpty());
         assertTrue(espacosDaEtapa(criada.id()).isEmpty());
-        assertEquals(1, new ListarEtapas(c.fases, c.etapas).executar(IDECAN, faseId).size()); // Resultado Final permanece
+        assertEquals(1, new ListarEtapas(c.fases, c.etapas, c.resultadoFinal, c.espacos).executar(IDECAN, faseId).size()); // Resultado Final permanece
         assertThrows(NaoEncontradoException.class, () -> c.excluirEtapa().executar(IDECAN, criada.id()));
+    }
+
+    @Test
+    void listarInsereResultadoFinalEmFaseAntiga() {
+        // Remove o RF criado no @BeforeEach (simula fase legada)
+        c.etapas.listarPorFase(IDECAN, faseId).forEach(e -> c.etapas.excluir(IDECAN, e.id()));
+        c.criarEtapa().executar(IDECAN, faseId, etapa("Prova", PROVA_OBJETIVA, null));
+        // criarEtapa já garante RF; remove de novo e confere só via listar
+        c.etapas.listarPorFase(IDECAN, faseId).stream()
+                .filter(e -> "Resultado Final".equals(e.nome()))
+                .forEach(e -> c.etapas.excluir(IDECAN, e.id()));
+        assertEquals(1, c.etapas.listarPorFase(IDECAN, faseId).size());
+
+        var listadas = new ListarEtapas(c.fases, c.etapas, c.resultadoFinal, c.espacos).executar(IDECAN, faseId);
+        assertEquals(List.of("Prova", "Resultado Final"), listadas.stream().map(e -> e.nome()).toList());
     }
 
     @Test

@@ -42,6 +42,13 @@ public class IdibFases {
         return Edital.count("ediId", editalId) > 0;
     }
 
+    public Optional<String> nomeDoEdital(int editalId) {
+        return Edital.<Edital>findByIdOptional(editalId)
+                .map(e -> e.ediNomeConcurso)
+                .filter(n -> n != null && !n.isBlank())
+                .map(String::trim);
+    }
+
     public boolean ordemEmUso(int editalId, short ordem, Integer ignorarFaseId) {
         if (ignorarFaseId == null) {
             return Fase.count("edital.ediId = ?1 and ordem = ?2", editalId, ordem) > 0;

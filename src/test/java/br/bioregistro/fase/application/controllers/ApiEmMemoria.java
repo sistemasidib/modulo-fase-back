@@ -33,7 +33,9 @@ public final class ApiEmMemoria {
     public static final LocalDate HOJE = LocalDate.of(2026, 10, 10);
 
     public final FasesEmMemoria fases = new FasesEmMemoria()
-            .comEdital(IDECAN, 10).comEdital(IDECAN, 11).comEdital(IDIB, 20);
+            .comEdital(IDECAN, 10, "PM-XX 2027")
+            .comEdital(IDECAN, 11, "PM-XX 2027")
+            .comEdital(IDIB, 20, "Outro");
     public final GruposEmMemoria grupos = new GruposEmMemoria(fases).comCargos(10, 101, 102, 103);
     public final EtapasEmMemoria etapas = new EtapasEmMemoria();
     public final PublicacoesEmMemoria publicacoes = new PublicacoesEmMemoria();

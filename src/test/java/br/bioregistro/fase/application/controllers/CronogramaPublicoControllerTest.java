@@ -6,10 +6,13 @@ import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @TestProfile(SemBanco.class)
@@ -65,7 +68,7 @@ class CronogramaPublicoControllerTest {
     }
 
     @Test
-    void baixaPdfAnexoIi() {
+    void baixaPdfAnexoIiComNomeDoConcurso() {
         given().contentType(ContentType.JSON)
                 .body("""
                         {"itens":[
@@ -75,9 +78,14 @@ class CronogramaPublicoControllerTest {
                 .when().put(API)
                 .then().statusCode(200);
 
-        given().when().get(API + "/pdf")
+        byte[] pdf = given().when().get(API + "/pdf")
                 .then().statusCode(200)
                 .header("Content-Type", startsWith("application/pdf"))
-                .header("Content-Disposition", org.hamcrest.Matchers.containsString("cronograma-publico-10.pdf"));
+                .header("Content-Disposition", org.hamcrest.Matchers.containsString("cronograma-publico-10.pdf"))
+                .extract().asByteArray();
+
+        String texto = new String(pdf, StandardCharsets.ISO_8859_1);
+        assertTrue(texto.contains("PM-XX 2027"), "PDF deve trazer o nome do concurso (RN-CP-11)");
+        assertTrue(texto.contains("ANEXO II"));
     }
 }

@@ -9,9 +9,12 @@ import br.bioregistro.fase.domain.port.TipoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Configuração padrão e por edital dos tipos de publicação (spec 006, RN19–RN21).
- * Valores padrão do seed: pendência P-08.
+ * Valores padrão: {@code db/024-config-publicacao-padrao.sql} (P-08).
  */
 @ApplicationScoped
 public class ConfiguracoesDePublicacao {
@@ -42,6 +45,16 @@ public class ConfiguracoesDePublicacao {
                 .or(() -> configs.padrao(instituicao, tipoPublicacaoId))
                 .orElseThrow(() -> new NaoEncontradoException("Configuração do tipo de publicação",
                         tipoPublicacaoId));
+    }
+
+    /** Configurações efetivas de todos os tipos que têm padrão ou override no edital. */
+    public List<ConfiguracaoDePublicacao> listarEfetivas(Instituicao instituicao, int editalId) {
+        exigirEdital(instituicao, editalId);
+        return tipos.tiposPublicacao(instituicao).stream()
+                .map(t -> configs.doEdital(instituicao, editalId, t.id())
+                        .or(() -> configs.padrao(instituicao, t.id())))
+                .flatMap(Optional::stream)
+                .toList();
     }
 
     @Transactional

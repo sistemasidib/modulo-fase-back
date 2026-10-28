@@ -30,14 +30,17 @@ public class AtualizarEtapa {
     private final VinculoCronogramaRepository vinculos;
     private final EspacosDePublicacao espacos;
     private final CriterioCorrecaoRepository criterios;
+    private final AplicarConfigPublicacaoNaEtapa aplicarConfig;
 
     public AtualizarEtapa(EtapaRepository etapas, TipoRepository tipos, VinculoCronogramaRepository vinculos,
-                          EspacosDePublicacao espacos, CriterioCorrecaoRepository criterios) {
+                          EspacosDePublicacao espacos, CriterioCorrecaoRepository criterios,
+                          AplicarConfigPublicacaoNaEtapa aplicarConfig) {
         this.etapas = etapas;
         this.tipos = tipos;
         this.vinculos = vinculos;
         this.espacos = espacos;
         this.criterios = criterios;
+        this.aplicarConfig = aplicarConfig;
     }
 
     @Transactional
@@ -60,6 +63,7 @@ public class AtualizarEtapa {
         Etapa salva = etapas.salvar(instituicao, etapa);
         String aviso = espacos.ajustarEspacoDaModalidade(instituicao, salva.faseId(), salva.id(),
                 modalidadeAnterior, salva.modalidade());
+        aplicarConfig.executar(instituicao, salva);
         return EtapaResponse.de(salva, pontuacaoMaxima(instituicao, salva.id()), aviso);
     }
 

@@ -21,8 +21,8 @@ import static br.bioregistro.fase.domain.model.cronograma.Parametros.RECURSO_GAB
  * spec 003: Fase 1 = prova objetiva (RN06), gabarito = prova + parâmetro (RN15) e recurso do
  * gabarito aberto no dia da publicação por 2 dias (RN16). E16 e E17 ficam sem faixa histórica.
  *
- * <p>E14 e E15 recalibradas com 127 editais IDECAN de 2018–2026 (out/2026): locais de prova 9 dias
- * antes da prova; fim das inscrições → prova com P25–P75 de 27–40 dias.
+ * <p>E14: locais −4 dias antes da prova (norma Karen 3–4; calibração histórica −9). E15: fim das
+ * inscrições → prova com P25–P75 de 27–40 dias. Gabarito/recurso: parâmetros (default 7 / 5).
  */
 public final class EsqueletoIdecanV1 {
 
@@ -79,7 +79,7 @@ public final class EsqueletoIdecanV1 {
         e.add(etapa("E13", "Divulgação do resultado definitivo de inscrição (Atendimento Especial)", g, Referencia.fim("E12"), 8, "6-12", 0, 64));
 
         g = F1_PROVA_OBJETIVA;
-        e.add(etapa("E14", "Divulgação dos locais de prova", g, Referencia.inicio("E15"), -9, "-9--9", 0, 114));
+        e.add(etapa("E14", "Divulgação dos locais de prova", g, Referencia.inicio("E15"), -4, "-4--3", 0, 114));
         e.add(etapa("E15", "Realização das Provas Objetivas", g, Referencia.fim("E04"), 34, "27-40", 0, 124)
                 .comParametros(INTERVALO_PROVA, null));
         e.add(etapa("E16", "Publicação dos gabaritos preliminares das provas objetivas", g, Referencia.inicio("E15"), 15, null, 0, 63)

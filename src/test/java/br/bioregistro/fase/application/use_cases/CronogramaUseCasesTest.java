@@ -191,7 +191,7 @@ class CronogramaUseCasesTest {
         CronogramaResponse salvo = consultar.buscar(IDECAN, id);
         var e16 = salvo.calculado().etapa("E16").orElseThrow();
         var e15 = salvo.calculado().etapa("E15").orElseThrow();
-        assertEquals(1, e16.inicioRelativo() - e15.inicioRelativo());
+        assertEquals(7, e16.inicioRelativo() - e15.inicioRelativo());
 
         int novo = editar.abrir(IDECAN, 11, "Yuri").id();
         var n16 = consultar.buscar(IDECAN, novo).calculado().etapa("E16").orElseThrow();
@@ -432,8 +432,8 @@ class CronogramaUseCasesTest {
         List<PublicacaoResponse> lista = new ListarPublicacoes(fases, publicacoes, doCronograma).executar(IDECAN, fase.id());
         PublicacaoResponse gabarito = lista.stream().filter(p -> p.tipo().equals("gabarito_preliminar"))
                 .findFirst().orElseThrow();
-        assertEquals(LocalDate.of(2027, 2, 21), gabarito.dataPrevista().toLocalDate());
-        assertEquals(LocalDate.of(2027, 2, 21), gabarito.recursoInicio().toLocalDate());
+        assertEquals(LocalDate.of(2027, 2, 27), gabarito.dataPrevista().toLocalDate());
+        assertEquals(LocalDate.of(2027, 2, 27), gabarito.recursoInicio().toLocalDate());
         assertNull(gabarito.publicadaEm());
     }
 

@@ -21,10 +21,19 @@ public class FasesEmMemoria implements FaseRepository {
     /** faseId → grupos que participam, preenchido por {@link GruposEmMemoria#vincularFase}. */
     final Map<String, Set<Integer>> gruposDaFase = new HashMap<>();
     final Set<String> editais = new HashSet<>();
+    final Map<String, String> nomesEditais = new HashMap<>();
     private int proximoId = 1;
 
     public FasesEmMemoria comEdital(Instituicao instituicao, int editalId) {
-        editais.add(instituicao + ":" + editalId);
+        return comEdital(instituicao, editalId, null);
+    }
+
+    public FasesEmMemoria comEdital(Instituicao instituicao, int editalId, String nome) {
+        String chave = instituicao + ":" + editalId;
+        editais.add(chave);
+        if (nome != null && !nome.isBlank()) {
+            nomesEditais.put(chave, nome.trim());
+        }
         return this;
     }
 
@@ -65,6 +74,15 @@ public class FasesEmMemoria implements FaseRepository {
     @Override
     public boolean editalExiste(Instituicao instituicao, int editalId) {
         return editais.contains(instituicao + ":" + editalId);
+    }
+
+    @Override
+    public Optional<String> nomeDoEdital(Instituicao instituicao, int editalId) {
+        String chave = instituicao + ":" + editalId;
+        if (!editais.contains(chave)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(nomesEditais.get(chave));
     }
 
     @Override

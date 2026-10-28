@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "quarkus:dev (debug)",
+      "type": "shell",
+      "command": "./mvnw",
+      "args": ["quarkus:dev", "-Ddebug=5005", "-Dsuspend=n"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "quarkus",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Listening for transport dt_socket",
+          "endsPattern": "Quarkus .* started|Listening on:|Tests paused"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

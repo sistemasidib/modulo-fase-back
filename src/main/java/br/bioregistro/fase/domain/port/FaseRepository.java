@@ -19,6 +19,9 @@ public interface FaseRepository {
 
     boolean editalExiste(Instituicao instituicao, int editalId);
 
+    /** Nome do concurso no edital ({@code ediNomeConcurso}); vazio se o edital não existir. */
+    Optional<String> nomeDoEdital(Instituicao instituicao, int editalId);
+
     /** Há outra fase no edital com esta ordem? {@code ignorarFaseId} exclui a própria fase na edição. */
     boolean ordemEmUso(Instituicao instituicao, int editalId, short ordem, Integer ignorarFaseId);
 

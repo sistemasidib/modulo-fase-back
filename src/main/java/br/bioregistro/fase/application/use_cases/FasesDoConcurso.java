@@ -47,15 +47,16 @@ public class FasesDoConcurso {
         if (!fases.editalExiste(instituicao, editalId)) {
             throw new NaoEncontradoException("Edital", editalId);
         }
-        Map<Integer, TipoEtapa> execucao = tipos.tiposEtapa(instituicao).stream()
-                .filter(t -> t.categoria() == TipoEtapa.Categoria.EXECUCAO)
-                .collect(Collectors.toMap(TipoEtapa::id, Function.identity()));
+        /* Execução + Resultado Final (última fase do concurso; não entra no passo 1 de escolha). */
+        Map<Integer, TipoEtapa> noMenu = tipos.tiposEtapa(instituicao).stream()
+                .filter(t -> t.categoria() == TipoEtapa.Categoria.EXECUCAO || t.ehResultadoFinal())
+                .collect(Collectors.toMap(TipoEtapa::id, Function.identity(), (a, b) -> a));
 
         Map<Integer, Acumulado> porTipo = new LinkedHashMap<>();
         for (Fase fase : fases.listarPorEdital(instituicao, editalId)) {
             List<Integer> participantes = grupos.gruposDaFase(instituicao, fase.id());
             for (Etapa etapa : etapas.listarPorFase(instituicao, fase.id())) {
-                TipoEtapa tipo = execucao.get(etapa.tipoId());
+                TipoEtapa tipo = noMenu.get(etapa.tipoId());
                 if (tipo == null) {
                     continue;
                 }
@@ -66,7 +67,10 @@ public class FasesDoConcurso {
         }
 
         List<Acumulado> ordenados = new ArrayList<>(porTipo.values());
-        ordenados.sort(Comparator.comparingInt((Acumulado a) -> a.menorOrdem).thenComparing(a -> a.tipo.id()));
+        ordenados.sort(Comparator
+                .comparingInt((Acumulado a) -> a.tipo.ehResultadoFinal() ? 1 : 0)
+                .thenComparingInt(a -> a.menorOrdem)
+                .thenComparing(a -> a.tipo.id()));
         List<FaseDoConcursoResponse> resposta = new ArrayList<>();
         for (int i = 0; i < ordenados.size(); i++) {
             Acumulado a = ordenados.get(i);

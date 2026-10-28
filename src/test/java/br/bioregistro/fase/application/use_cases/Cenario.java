@@ -39,6 +39,10 @@ class Cenario {
         return this;
     }
 
+    AplicarConfigPublicacaoNaEtapa aplicarConfig() {
+        return new AplicarConfigPublicacaoNaEtapa(publicacoes, configsPublicacao, fases, etapas, tipos);
+    }
+
     CriarFase criarFase() {
         return new CriarFase(fases, espacos, resultadoFinal);
     }
@@ -48,11 +52,11 @@ class Cenario {
     }
 
     CriarEtapa criarEtapa() {
-        return new CriarEtapa(fases, etapas, tipos, espacos, criteriosCorrecao, resultadoFinal);
+        return new CriarEtapa(fases, etapas, tipos, espacos, criteriosCorrecao, resultadoFinal, aplicarConfig());
     }
 
     AtualizarEtapa atualizarEtapa() {
-        return new AtualizarEtapa(etapas, tipos, vinculos, espacos, criteriosCorrecao);
+        return new AtualizarEtapa(etapas, tipos, vinculos, espacos, criteriosCorrecao, aplicarConfig());
     }
 
     ExcluirEtapa excluirEtapa() {
@@ -85,7 +89,7 @@ class Cenario {
     }
 
     GerarFasesDoGrupo gerarFases() {
-        return new GerarFasesDoGrupo(grupos, fases, etapas, tipos, espacos, resultadoFinal);
+        return new GerarFasesDoGrupo(grupos, fases, etapas, tipos, espacos, resultadoFinal, aplicarConfig());
     }
 
     static FaseRequest fase(String nome, int ordem) {
