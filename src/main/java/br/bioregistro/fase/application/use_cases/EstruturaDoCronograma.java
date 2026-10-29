@@ -101,7 +101,7 @@ public class EstruturaDoCronograma {
         } else {
             short ordem = (short) (fases.maiorOrdem(instituicao, edital.editalId()) + 1);
             fase = fases.salvar(instituicao, new Fase(null, edital.editalId(), modulo.nome(), null, ordem,
-                    abertura(modulo, calculado), fechamento(modulo, calculado)));
+                    false, abertura(modulo, calculado), fechamento(modulo, calculado)));
         }
         vinculos.vincularFase(instituicao, fase.id(), edital.id(), modulo);
         return fase;
@@ -116,7 +116,7 @@ public class EstruturaDoCronograma {
             return fase;
         }
         return fases.salvar(instituicao, new Fase(fase.id(), fase.editalId(), fase.nome(), fase.descricao(),
-                fase.ordem(), abertura, fechamento));
+                fase.ordem(), fase.clausulaBarreira(), abertura, fechamento));
     }
 
     private static OffsetDateTime abertura(ModuloDeExecucao modulo, CronogramaCalculado calculado) {
@@ -136,7 +136,7 @@ public class EstruturaDoCronograma {
                 .orElseGet(() -> etapas.salvar(instituicao, CamposDaEtapa.aplicar(tipos, instituicao,
                         new Etapa(null, fase.id(), tipo.descricao(), tipo.id(),
                                 null, null, null, null, false, false, false, false, null, null, null, null, null, null,
-                                null, null, null),
+                                null, null, null, null),
                         true)));
     }
 

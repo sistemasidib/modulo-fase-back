@@ -3,7 +3,11 @@ package br.bioregistro.fase.domain.model;
 import java.util.Set;
 
 /** Linha de {@code dom_tipo_etapa} (prova objetiva, TAF, análise de PcD...). */
-public record TipoEtapa(Integer id, String valor, String descricao) {
+public record TipoEtapa(Integer id, String valor, String descricao, Integer diasRecursoPadrao) {
+
+    public TipoEtapa(Integer id, String valor, String descricao) {
+        this(id, valor, descricao, null);
+    }
 
     /**
      * Etapa obrigatória de toda fase: não entra nas opções de fase do grupo (não é EXECUCAO).

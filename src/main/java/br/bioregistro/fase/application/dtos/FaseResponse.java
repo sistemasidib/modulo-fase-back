@@ -11,6 +11,7 @@ public record FaseResponse(
         String nome,
         String descricao,
         Short ordem,
+        boolean clausulaBarreira,
         OffsetDateTime dataAbertura,
         OffsetDateTime dataFechamento,
         List<Integer> grupoIds,
@@ -24,6 +25,6 @@ public record FaseResponse(
     public static FaseResponse de(Fase fase, List<Integer> grupoIds) {
         List<Integer> ids = grupoIds == null ? List.of() : List.copyOf(grupoIds);
         return new FaseResponse(fase.id(), fase.editalId(), fase.nome(), fase.descricao(), fase.ordem(),
-                fase.dataAbertura(), fase.dataFechamento(), ids, ids.size());
+                fase.clausulaBarreira(), fase.dataAbertura(), fase.dataFechamento(), ids, ids.size());
     }
 }

@@ -27,7 +27,8 @@ public record EtapaRequest(
         LocalDateTime publicadaEm,
         Boolean notaZeroElimina,
         BigDecimal notaMinimaPercentual,
-        String modalidade
+        String modalidade,
+        Integer diasRecurso
 ) {
 
     public Etapa paraDominio(Integer id, Integer faseId) {
@@ -37,6 +38,6 @@ public record EtapaRequest(
                 Boolean.TRUE.equals(todosCandidatos),
                 Boolean.TRUE.equals(aceitaDocumentos),
                 aceitaRecurso, preliminar, elegibilidadeEtapaId, elegibilidadeStatusId, responsavelId, publicadaEm,
-                notaZeroElimina, notaMinimaPercentual, Modalidade.de(modalidade));
+                notaZeroElimina, notaMinimaPercentual, Modalidade.de(modalidade), diasRecurso);
     }
 }

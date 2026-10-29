@@ -46,6 +46,6 @@ public class IdecanTipos {
     }
 
     private static TipoEtapa tipoEtapa(DomTipoEtapa t) {
-        return new TipoEtapa(t.id, t.valor, t.descricao);
+        return new TipoEtapa(t.id, t.valor, t.descricao, t.diasRecursoPadrao);
     }
 }

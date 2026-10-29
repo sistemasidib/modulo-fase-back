@@ -167,6 +167,22 @@ class GrupoCargoUseCasesTest {
     }
 
     @Test
+    void gruposComMesmosTiposRecebemFasesProprias() {
+        int medio = grupo("Nível médio");
+        int superior = grupo("Nível superior");
+        adicionar(medio, 101);
+        adicionar(superior, 102);
+
+        FaseGeradaResponse doMedio = c.gerarFases().executar(IDECAN, medio, pedido("Médio", PROVA_OBJETIVA)).get(0);
+        FaseGeradaResponse doSuperior =
+                c.gerarFases().executar(IDECAN, superior, pedido("Superior", PROVA_OBJETIVA)).get(0);
+
+        assertTrue(!doMedio.fase().id().equals(doSuperior.fase().id()));
+        assertEquals(List.of(medio), c.grupos.gruposDaFase(IDECAN, doMedio.fase().id()));
+        assertEquals(List.of(superior), c.grupos.gruposDaFase(IDECAN, doSuperior.fase().id()));
+    }
+
+    @Test
     void grupoComFasesNaoPodeSerExcluido() {
         int medio = grupo("Nível médio");
         adicionar(medio, 101);

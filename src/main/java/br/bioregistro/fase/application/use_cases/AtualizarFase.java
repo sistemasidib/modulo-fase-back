@@ -16,8 +16,7 @@ import java.util.List;
 
 /**
  * Edita os dados da fase. A fase continua no mesmo edital. Na fase que segue o cronograma, as
- * datas são as dele (spec 005): as do pedido são ignoradas. Editar afeta todos os grupos da fase
- * (spec 006, RN03).
+ * datas são as dele (spec 005): as do pedido são ignoradas.
  */
 @ApplicationScoped
 public class AtualizarFase {
@@ -37,8 +36,9 @@ public class AtualizarFase {
         Fase atual = fases.buscar(instituicao, id)
                 .orElseThrow(() -> new NaoEncontradoException("Fase", id));
         FaseRequest pedido = vinculos.moduloDaFase(instituicao, id).isEmpty() ? request
-                : new FaseRequest(request.nome(), request.descricao(), request.ordem(), atual.dataAbertura(),
-                atual.dataFechamento());
+                : new FaseRequest(request.nome(), request.descricao(), request.ordem(),
+                request.clausulaBarreira() != null ? request.clausulaBarreira() : atual.clausulaBarreira(),
+                atual.dataAbertura(), atual.dataFechamento());
         Fase fase = pedido.paraDominio(id, atual.editalId());
         if (fases.ordemEmUso(instituicao, fase.editalId(), fase.ordem(), id)) {
             throw new ConflitoException("Já existe uma fase com a ordem " + fase.ordem() + " neste edital.");

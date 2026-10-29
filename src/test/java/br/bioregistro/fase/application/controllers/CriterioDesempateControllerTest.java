@@ -7,8 +7,6 @@ import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static br.bioregistro.fase.application.controllers.DisciplinaControllerTest.gerarFase;
-import static br.bioregistro.fase.application.controllers.DisciplinaControllerTest.grupoComCargos;
 import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.PROVA_OBJETIVA;
 import static br.bioregistro.fase.application.use_cases.TiposEmMemoria.TAF;
 import static io.restassured.RestAssured.given;
@@ -17,26 +15,28 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
-/** Critérios de desempate de cada fase: CRUD, ordem sempre de 1 a n e cópia para outras fases. */
+/** Critérios de desempate de cada etapa: CRUD, ordem sempre de 1 a n e cópia para outras etapas. */
 @QuarkusTest
 @TestProfile(SemBanco.class)
 class CriterioDesempateControllerTest {
 
+    private int etapa;
     private int fase;
     private String url;
 
     @BeforeEach
     void dados() {
         ApiEmMemoria.instalar();
-        fase = gerarFase(grupoComCargos("Nível médio", 101), "Prova objetiva", PROVA_OBJETIVA);
-        url = urlDa(fase);
+        fase = FaseEtapaControllerTest.criarFase(10, "Prova objetiva", 1);
+        etapa = FaseEtapaControllerTest.criarEtapa(fase, "Prova objetiva", PROVA_OBJETIVA);
+        url = urlDa(etapa);
     }
 
     @Test
     void criaNoFimDaListaENormalizaOsTextos() {
         criar(idoso()).statusCode(201)
                 .body("ordem", is(1))
-                .body("faseId", is(fase))
+                .body("etapaId", is(etapa))
                 .body("tipo", is("idade"))
                 .body("direcao", is("desc"))
                 .body("baseLegal", is("idoso"))
@@ -52,8 +52,9 @@ class CriterioDesempateControllerTest {
     }
 
     @Test
-    void cadaFaseTemOsSeusCriterios() {
-        int outra = gerarFase(grupoComCargos("Nível superior", 102), "TAF", TAF);
+    void cadaEtapaTemOsSeusCriterios() {
+        int outraFase = FaseEtapaControllerTest.criarFase(10, "TAF", 2);
+        int outra = FaseEtapaControllerTest.criarEtapa(outraFase, "TAF", TAF);
         criar(idoso()).statusCode(201);
 
         given().when().get(urlDa(outra)).then().statusCode(200).body("$", hasSize(0));
@@ -64,8 +65,8 @@ class CriterioDesempateControllerTest {
 
     @Test
     void copiaSubstituindoOsCriteriosDoDestino() {
-        int outra = FaseEtapaControllerTest.criarFase(10, "Outra", 9);
-        FaseEtapaControllerTest.criarEtapa(outra, "Prova objetiva", PROVA_OBJETIVA);
+        int outraFase = FaseEtapaControllerTest.criarFase(10, "Outra", 9);
+        int outra = FaseEtapaControllerTest.criarEtapa(outraFase, "Prova objetiva", PROVA_OBJETIVA);
         given().contentType(ContentType.JSON).body(jurado()).when().post(urlDa(outra)).then().statusCode(201);
         criar(idoso()).statusCode(201);
         criar(notaDisciplina("lingua_portuguesa")).statusCode(201);
@@ -74,7 +75,7 @@ class CriterioDesempateControllerTest {
         given().when().get(urlDa(outra)).then().statusCode(200)
                 .body("tipo", contains("idade", "nota"))
                 .body("ordem", contains(1, 2))
-                .body("faseId", contains(outra, outra));
+                .body("etapaId", contains(outra, outra));
         copiar("[]").statusCode(400);
         copiar("[999]").statusCode(404);
     }
@@ -128,7 +129,7 @@ class CriterioDesempateControllerTest {
     }
 
     @Test
-    void faseOuCriterioInexistenteEh404() {
+    void etapaOuCriterioInexistenteEh404() {
         given().when().get(urlDa(999)).then().statusCode(404);
         given().contentType(ContentType.JSON).body(idoso())
                 .when().put("/v1/idecan/criterios-desempate/999").then().statusCode(404);
@@ -143,8 +144,8 @@ class CriterioDesempateControllerTest {
                 .when().put("/v1/idecan/criterios-desempate/" + id).then().statusCode(404);
     }
 
-    private static String urlDa(int faseId) {
-        return "/v1/idecan/fases/" + faseId + "/criterios-desempate";
+    private static String urlDa(int etapaId) {
+        return "/v1/idecan/etapas/" + etapaId + "/criterios-desempate";
     }
 
     private ValidatableResponse criar(String corpo) {
@@ -156,8 +157,8 @@ class CriterioDesempateControllerTest {
                 .when().put(url + "/ordem").then();
     }
 
-    private ValidatableResponse copiar(String faseIds) {
-        return given().contentType(ContentType.JSON).body("{\"faseIds\": " + faseIds + "}")
+    private ValidatableResponse copiar(String etapaIds) {
+        return given().contentType(ContentType.JSON).body("{\"etapaIds\": " + etapaIds + "}")
                 .when().post(url + "/copiar").then();
     }
 

@@ -9,11 +9,13 @@ public record FaseRequest(
         String nome,
         String descricao,
         Short ordem,
+        Boolean clausulaBarreira,
         OffsetDateTime dataAbertura,
         OffsetDateTime dataFechamento
 ) {
 
     public Fase paraDominio(Integer id, Integer editalId) {
-        return new Fase(id, editalId, nome, descricao, ordem, dataAbertura, dataFechamento);
+        return new Fase(id, editalId, nome, descricao, ordem, Boolean.TRUE.equals(clausulaBarreira),
+                dataAbertura, dataFechamento);
     }
 }

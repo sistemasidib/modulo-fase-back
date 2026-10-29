@@ -7,7 +7,7 @@ import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 import br.bioregistro.fase.domain.model.CriterioDesempate;
 import br.bioregistro.fase.domain.model.Instituicao;
 import br.bioregistro.fase.domain.port.CriterioDesempateRepository;
-import br.bioregistro.fase.domain.port.FaseRepository;
+import br.bioregistro.fase.domain.port.EtapaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
@@ -19,35 +19,35 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/** Critérios de desempate de uma fase (de um grupo), sempre numerados de 1 a n na ordem de aplicação. */
+/** Critérios de desempate de uma etapa, sempre numerados de 1 a n na ordem de aplicação. */
 @ApplicationScoped
 public class CriteriosDeDesempate {
 
     private final CriterioDesempateRepository criterios;
-    private final FaseRepository fases;
+    private final EtapaRepository etapas;
 
-    public CriteriosDeDesempate(CriterioDesempateRepository criterios, FaseRepository fases) {
+    public CriteriosDeDesempate(CriterioDesempateRepository criterios, EtapaRepository etapas) {
         this.criterios = criterios;
-        this.fases = fases;
+        this.etapas = etapas;
     }
 
-    public List<CriterioDesempateResponse> listar(Instituicao instituicao, int faseId) {
-        exigirFase(instituicao, faseId);
-        return resposta(criterios.daFase(instituicao, faseId));
+    public List<CriterioDesempateResponse> listar(Instituicao instituicao, int etapaId) {
+        exigirEtapa(instituicao, etapaId);
+        return resposta(criterios.daEtapa(instituicao, etapaId));
     }
 
     @Transactional
-    public CriterioDesempateResponse criar(Instituicao instituicao, int faseId, CriterioDesempateRequest r) {
-        exigirFase(instituicao, faseId);
-        int ordem = criterios.daFase(instituicao, faseId).size() + 1;
-        CriterioDesempate novo = de(null, faseId, ordem, r);
+    public CriterioDesempateResponse criar(Instituicao instituicao, int etapaId, CriterioDesempateRequest r) {
+        exigirEtapa(instituicao, etapaId);
+        int ordem = criterios.daEtapa(instituicao, etapaId).size() + 1;
+        CriterioDesempate novo = de(null, etapaId, ordem, r);
         return CriterioDesempateResponse.de(criterios.salvar(instituicao, novo));
     }
 
     @Transactional
     public CriterioDesempateResponse atualizar(Instituicao instituicao, int id, CriterioDesempateRequest r) {
         CriterioDesempate atual = buscar(instituicao, id);
-        CriterioDesempate alterado = de(id, atual.faseId(), atual.ordem(), r);
+        CriterioDesempate alterado = de(id, atual.etapaId(), atual.ordem(), r);
         return CriterioDesempateResponse.de(criterios.salvar(instituicao, alterado));
     }
 
@@ -56,37 +56,37 @@ public class CriteriosDeDesempate {
     public void excluir(Instituicao instituicao, int id) {
         CriterioDesempate atual = buscar(instituicao, id);
         criterios.excluir(instituicao, id);
-        numerar(instituicao, criterios.daFase(instituicao, atual.faseId()));
+        numerar(instituicao, criterios.daEtapa(instituicao, atual.etapaId()));
     }
 
-    /** {@code ids} = todos os critérios da fase, do 1º ao último. */
+    /** {@code ids} = todos os critérios da etapa, do 1º ao último. */
     @Transactional
-    public List<CriterioDesempateResponse> reordenar(Instituicao instituicao, int faseId, List<Integer> ids) {
-        exigirFase(instituicao, faseId);
-        List<CriterioDesempate> atuais = criterios.daFase(instituicao, faseId);
+    public List<CriterioDesempateResponse> reordenar(Instituicao instituicao, int etapaId, List<Integer> ids) {
+        exigirEtapa(instituicao, etapaId);
+        List<CriterioDesempate> atuais = criterios.daEtapa(instituicao, etapaId);
         Map<Integer, CriterioDesempate> porId = atuais.stream()
                 .collect(Collectors.toMap(CriterioDesempate::id, Function.identity()));
         List<Integer> ordem = ids == null ? List.of() : ids;
         Set<Integer> vistos = new HashSet<>(ordem);
         if (ordem.size() != atuais.size() || vistos.size() != ordem.size() || !porId.keySet().equals(vistos)) {
-            throw new RegraDeNegocioException("Envie todos os critérios da fase, cada um uma vez, na nova ordem.");
+            throw new RegraDeNegocioException("Envie todos os critérios da etapa, cada um uma vez, na nova ordem.");
         }
         return resposta(numerar(instituicao, ordem.stream().map(porId::get).toList()));
     }
 
-    /** Troca os critérios de cada fase de destino por cópias dos critérios da fase de origem, na mesma ordem. */
+    /** Troca os critérios de cada etapa de destino por cópias dos da origem, na mesma ordem. */
     @Transactional
     public void copiar(Instituicao instituicao, int origemId, List<Integer> destinoIds) {
-        exigirFase(instituicao, origemId);
+        exigirEtapa(instituicao, origemId);
         List<Integer> destinos = destinoIds == null ? List.of() : destinoIds.stream().distinct()
                 .filter(id -> id != origemId).toList();
         if (destinos.isEmpty()) {
-            throw new RegraDeNegocioException("Escolha ao menos uma fase de destino.");
+            throw new RegraDeNegocioException("Escolha ao menos uma etapa de destino.");
         }
-        destinos.forEach(id -> exigirFase(instituicao, id));
-        List<CriterioDesempate> modelo = criterios.daFase(instituicao, origemId);
+        destinos.forEach(id -> exigirEtapa(instituicao, id));
+        List<CriterioDesempate> modelo = criterios.daEtapa(instituicao, origemId);
         for (int destino : destinos) {
-            criterios.excluirDaFase(instituicao, destino);
+            criterios.excluirDaEtapa(instituicao, destino);
             for (CriterioDesempate c : modelo) {
                 criterios.salvar(instituicao, new CriterioDesempate(
                         null, destino, c.ordem(), c.label(), c.tipo(), c.direcao(),
@@ -95,8 +95,8 @@ public class CriteriosDeDesempate {
         }
     }
 
-    private static CriterioDesempate de(Integer id, int faseId, int ordem, CriterioDesempateRequest r) {
-        return new CriterioDesempate(id, faseId, ordem, r.label(), r.tipo(), r.direcao(),
+    private static CriterioDesempate de(Integer id, int etapaId, int ordem, CriterioDesempateRequest r) {
+        return new CriterioDesempate(id, etapaId, ordem, r.label(), r.tipo(), r.direcao(),
                 r.condicao(), r.dataReferencia(), r.fonte(), r.baseLegal());
     }
 
@@ -113,9 +113,9 @@ public class CriteriosDeDesempate {
         return criterios.buscar(instituicao, id).orElseThrow(() -> new NaoEncontradoException("Critério de desempate", id));
     }
 
-    private void exigirFase(Instituicao instituicao, int faseId) {
-        if (fases.buscar(instituicao, faseId).isEmpty()) {
-            throw new NaoEncontradoException("Fase", faseId);
+    private void exigirEtapa(Instituicao instituicao, int etapaId) {
+        if (etapas.buscar(instituicao, etapaId).isEmpty()) {
+            throw new NaoEncontradoException("Etapa", etapaId);
         }
     }
 

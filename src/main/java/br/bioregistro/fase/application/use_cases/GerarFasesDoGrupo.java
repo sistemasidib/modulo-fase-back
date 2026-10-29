@@ -29,12 +29,11 @@ import java.util.stream.Collectors;
 
 /**
  * Gera, para o grupo, as fases e as etapas escolhidas pelo usuário (tipos de etapa marcados).
- * A fase é do edital (spec 005): se o edital já tem uma fase com exatamente os tipos de etapa
- * pedidos (a criada pelo cronograma, ou a de outro grupo), o grupo passa a participar dela, sem
- * duplicar.
- * Senão, a fase é criada: cada etapa já nasce com os espaços de publicação escolhidos (ou os
- * padrão do tipo), e a fase com o resultado próprio quando ele não repete o de uma etapa. As fases
- * novas entram depois da última ordem do edital; a ordem é única no edital inteiro.
+ * Cada grupo tem fases próprias (RN03): não reutiliza fase de outro grupo do mesmo edital.
+ * Se o próprio grupo já tiver uma fase com exatamente os tipos pedidos, a chamada é idempotente.
+ * Cada etapa nasce com os espaços de publicação escolhidos (ou os padrão do tipo), e a fase com
+ * o resultado próprio quando ele não repete o de uma etapa. As fases novas entram depois da
+ * última ordem do edital; a ordem é única no edital inteiro.
  */
 @ApplicationScoped
 public class GerarFasesDoGrupo {
@@ -73,9 +72,10 @@ public class GerarFasesDoGrupo {
         short ordem = fases.maiorOrdem(instituicao, grupo.editalId());
         List<FaseGeradaResponse> geradas = new ArrayList<>();
         for (FaseGerada pedido : request.fases()) {
-            Optional<Fase> existente = faseComTipo(instituicao, grupo.editalId(), pedido);
-            if (existente.isPresent()) {
-                geradas.add(participar(instituicao, grupo, existente.get()));
+            Optional<Fase> jaDoGrupo = faseDoGrupoComTipos(instituicao, grupoId, pedido);
+            if (jaDoGrupo.isPresent()) {
+                resultadoFinal.garantir(instituicao, jaDoGrupo.get().id());
+                geradas.add(resposta(instituicao, jaDoGrupo.get()));
             } else {
                 ordem++;
                 geradas.add(gerarFase(instituicao, grupo, ordem, pedido));
@@ -84,10 +84,11 @@ public class GerarFasesDoGrupo {
         return geradas;
     }
 
-    private Optional<Fase> faseComTipo(Instituicao instituicao, int editalId, FaseGerada pedido) {
+    /** Só olha fases já vinculadas a este grupo — nunca reutiliza fase de outro grupo. */
+    private Optional<Fase> faseDoGrupoComTipos(Instituicao instituicao, int grupoId, FaseGerada pedido) {
         Set<Integer> pedidos = tiposExecucao(instituicao, (pedido.etapas() == null ? List.<EtapaGerada>of() : pedido.etapas())
                 .stream().map(EtapaGerada::tipoId).filter(Objects::nonNull).collect(Collectors.toSet()));
-        return fases.listarPorEdital(instituicao, editalId).stream()
+        return fases.listarPorGrupo(instituicao, grupoId).stream()
                 .filter(f -> tiposExecucao(instituicao, etapas.listarPorFase(instituicao, f.id()).stream()
                         .map(Etapa::tipoId).collect(Collectors.toSet())).equals(pedidos))
                 .findFirst();
@@ -100,17 +101,9 @@ public class GerarFasesDoGrupo {
                 .collect(Collectors.toSet());
     }
 
-    private FaseGeradaResponse participar(Instituicao instituicao, GrupoCargo grupo, Fase fase) {
-        if (!grupos.gruposDaFase(instituicao, fase.id()).contains(grupo.id())) {
-            grupos.vincularFase(instituicao, fase.id(), grupo.id());
-        }
-        resultadoFinal.garantir(instituicao, fase.id());
-        return resposta(instituicao, fase);
-    }
-
     private FaseGeradaResponse gerarFase(Instituicao instituicao, GrupoCargo grupo, short ordem, FaseGerada pedido) {
         Fase fase = fases.salvar(instituicao, new Fase(null, grupo.editalId(), pedido.nome(), pedido.descricao(),
-                ordem, pedido.dataAbertura(), pedido.dataFechamento()));
+                ordem, false, pedido.dataAbertura(), pedido.dataFechamento()));
         grupos.vincularFase(instituicao, fase.id(), grupo.id());
 
         List<EtapaGerada> pedidas = pedido.etapas() == null ? List.of() : pedido.etapas();
@@ -123,7 +116,7 @@ public class GerarFasesDoGrupo {
             Etapa etapa = etapas.salvar(instituicao, CamposDaEtapa.aplicar(tipos, instituicao,
                     new Etapa(null, fase.id(), nome, tipo.id(), null,
                             pedido.dataAbertura(), pedido.dataFechamento(),
-                            null, false, false, false, false, null, null, null, null, null, null, null, null, null),
+                            null, false, false, false, false, null, null, null, null, null, null, null, null, null, null),
                     true));
             espacos.criarParaEtapa(instituicao, fase.id(), etapa.id(), tipo.id(), pedida.publicacoes());
             espacos.ajustarEspacoDaModalidade(instituicao, fase.id(), etapa.id(), null, etapa.modalidade());

@@ -16,38 +16,38 @@ class FaseTest {
 
     @Test
     void criaFaseValidaComNomeSemEspacosNasPontas() {
-        Fase fase = new Fase(null, 10, "  Fase objetiva  ", null, (short) 1, ABERTURA, FECHAMENTO);
+        Fase fase = new Fase(null, 10, "  Fase objetiva  ", null, (short) 1, false, ABERTURA, FECHAMENTO);
         assertEquals("Fase objetiva", fase.nome());
     }
 
     @Test
     void exigeEdital() {
         assertThrows(RegraDeNegocioException.class,
-                () -> new Fase(null, null, "Fase", null, (short) 1, ABERTURA, FECHAMENTO));
+                () -> new Fase(null, null, "Fase", null, (short) 1, false, ABERTURA, FECHAMENTO));
     }
 
     @Test
     void exigeNome() {
         assertThrows(RegraDeNegocioException.class,
-                () -> new Fase(null, 10, "  ", null, (short) 1, ABERTURA, FECHAMENTO));
+                () -> new Fase(null, 10, "  ", null, (short) 1, false, ABERTURA, FECHAMENTO));
     }
 
     @Test
     void limitaNomeA150Caracteres() {
         String nome = "x".repeat(Fase.NOME_MAX + 1);
         assertThrows(RegraDeNegocioException.class,
-                () -> new Fase(null, 10, nome, null, (short) 1, ABERTURA, FECHAMENTO));
+                () -> new Fase(null, 10, nome, null, (short) 1, false, ABERTURA, FECHAMENTO));
     }
 
     @Test
     void exigeOrdemPositiva() {
         assertThrows(RegraDeNegocioException.class,
-                () -> new Fase(null, 10, "Fase", null, (short) 0, ABERTURA, FECHAMENTO));
+                () -> new Fase(null, 10, "Fase", null, (short) 0, false, ABERTURA, FECHAMENTO));
     }
 
     @Test
     void aceitaFaseSemDatas() {
-        Fase fase = new Fase(null, 10, "Fase", null, (short) 1, null, null);
+        Fase fase = new Fase(null, 10, "Fase", null, (short) 1, false, null, null);
         assertNull(fase.dataAbertura());
         assertNull(fase.dataFechamento());
     }
@@ -55,6 +55,6 @@ class FaseTest {
     @Test
     void recusaFechamentoAntesDaAbertura() {
         assertThrows(RegraDeNegocioException.class,
-                () -> new Fase(null, 10, "Fase", null, (short) 1, FECHAMENTO, ABERTURA));
+                () -> new Fase(null, 10, "Fase", null, (short) 1, false, FECHAMENTO, ABERTURA));
     }
 }

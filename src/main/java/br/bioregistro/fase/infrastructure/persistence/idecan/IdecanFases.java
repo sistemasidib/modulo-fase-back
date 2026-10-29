@@ -69,6 +69,7 @@ public class IdecanFases {
         entidade.nome = fase.nome();
         entidade.descricao = fase.descricao();
         entidade.ordem = fase.ordem();
+        entidade.clausulaBarreira = fase.clausulaBarreira();
         entidade.dataAbertura = fase.dataAbertura();
         entidade.dataFechamento = fase.dataFechamento();
         entidade.updatedAt = agora;
@@ -85,6 +86,7 @@ public class IdecanFases {
 
     private static br.bioregistro.fase.domain.model.Fase paraDominio(Fase e) {
         return new br.bioregistro.fase.domain.model.Fase(
-                e.id, e.edital.ediId, e.nome, e.descricao, e.ordem, e.dataAbertura, e.dataFechamento);
+                e.id, e.edital.ediId, e.nome, e.descricao, e.ordem,
+                Boolean.TRUE.equals(e.clausulaBarreira), e.dataAbertura, e.dataFechamento);
     }
 }

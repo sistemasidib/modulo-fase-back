@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-class ConfigsPublicacaoEmMemoria implements ConfiguracaoPublicacaoRepository {
+public class ConfigsPublicacaoEmMemoria implements ConfiguracaoPublicacaoRepository {
 
     private final Map<Integer, ConfiguracaoDePublicacao> padrao = new HashMap<>();
     private final Map<String, ConfiguracaoDePublicacao> edital = new HashMap<>();

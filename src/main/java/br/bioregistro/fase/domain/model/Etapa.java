@@ -10,6 +10,7 @@ import java.time.OffsetDateTime;
 /**
  * Etapa de uma fase. Espelha {@code dbo.etapa}; as datas são opcionais porque a
  * etapa pode existir antes de ter data definida. Discursiva e S05 ganham campos da spec 006.
+ * {@code diasRecurso} (RN10) sobrescreve o padrão do tipo de etapa.
  */
 public record Etapa(
         Integer id,
@@ -32,7 +33,8 @@ public record Etapa(
         LocalDateTime publicadaEm,
         Boolean notaZeroElimina,
         BigDecimal notaMinimaPercentual,
-        Modalidade modalidade
+        Modalidade modalidade,
+        Integer diasRecurso
 ) {
 
     public static final int NOME_MAX = 150;
@@ -54,6 +56,9 @@ public record Etapa(
         if (id != null && id.equals(elegibilidadeEtapaId)) {
             throw new RegraDeNegocioException("A etapa não pode ser pré-requisito de si mesma.");
         }
+        if (diasRecurso != null && diasRecurso < 1) {
+            throw new RegraDeNegocioException("A duração do recurso deve ser de pelo menos 1 dia.");
+        }
         notaMinimaPercentual = normalizarPercentual(notaMinimaPercentual);
     }
 
@@ -61,7 +66,7 @@ public record Etapa(
         return new Etapa(novoId, faseId, nome, tipoId, descricao, dataAbertura, dataFechamento, statusId,
                 reprovavel, obrigatoriaParaFase, todosCandidatos, aceitaDocumentos, aceitaRecurso, preliminar,
                 elegibilidadeEtapaId, elegibilidadeStatusId, responsavelId, publicadaEm,
-                notaZeroElimina, notaMinimaPercentual, modalidade);
+                notaZeroElimina, notaMinimaPercentual, modalidade, diasRecurso);
     }
 
     /** Nota mínima em pontos = percentual × pontuação máxima / 100 (CA05). */

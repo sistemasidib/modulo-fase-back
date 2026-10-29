@@ -48,14 +48,14 @@ public class ResultadoFinalDaFase {
                                 atual.aceitaDocumentos(), atual.aceitaRecurso(), atual.preliminar(),
                                 atual.elegibilidadeEtapaId(), atual.elegibilidadeStatusId(), atual.responsavelId(),
                                 atual.publicadaEm(), atual.notaZeroElimina(), atual.notaMinimaPercentual(),
-                                atual.modalidade()),
+                                atual.modalidade(), atual.diasRecurso()),
                         false));
             }
             return;
         }
         etapas.salvar(instituicao, CamposDaEtapa.aplicar(tipos, instituicao,
                 new Etapa(null, faseId, NOME, tipo.id(), null, null, null, null,
-                        false, true, true, false, null, null, null, null, null, null, null, null, null),
+                        false, true, true, false, null, null, null, null, null, null, null, null, null, null),
                 true));
     }
 

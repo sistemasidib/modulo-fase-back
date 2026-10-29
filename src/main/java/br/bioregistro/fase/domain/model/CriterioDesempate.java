@@ -4,10 +4,10 @@ import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/** Critério de desempate de uma fase (de um grupo); {@code ordem} 1 = primeiro a ser aplicado. */
+/** Critério de desempate de uma etapa; {@code ordem} 1 = primeiro a ser aplicado. */
 public record CriterioDesempate(
         Integer id,
-        int faseId,
+        int etapaId,
         int ordem,
         String label,
         Tipo tipo,
@@ -112,12 +112,12 @@ public record CriterioDesempate(
     }
 
     public CriterioDesempate comId(int novoId) {
-        return new CriterioDesempate(novoId, faseId, ordem, label, tipo, direcao, condicao,
+        return new CriterioDesempate(novoId, etapaId, ordem, label, tipo, direcao, condicao,
                 dataReferencia, fonte, baseLegal);
     }
 
     public CriterioDesempate comOrdem(int novaOrdem) {
-        return new CriterioDesempate(id, faseId, novaOrdem, label, tipo, direcao, condicao,
+        return new CriterioDesempate(id, etapaId, novaOrdem, label, tipo, direcao, condicao,
                 dataReferencia, fonte, baseLegal);
     }
 

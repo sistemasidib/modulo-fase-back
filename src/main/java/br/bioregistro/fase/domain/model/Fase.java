@@ -7,7 +7,7 @@ import java.time.OffsetDateTime;
 /**
  * Fase do edital. {@code ordem} é a posição da fase no edital e é única por edital
  * (UK {@code UQ_fase_edital_ordem} em {@code dbo.fases}). As datas vêm do cronograma e podem faltar
- * (fase de edital sem cronograma ou do legado).
+ * (fase de edital sem cronograma ou do legado). {@code clausulaBarreira} (RN09) é opcional por fase.
  */
 public record Fase(
         Integer id,
@@ -15,6 +15,7 @@ public record Fase(
         String nome,
         String descricao,
         Short ordem,
+        boolean clausulaBarreira,
         OffsetDateTime dataAbertura,
         OffsetDateTime dataFechamento
 ) {
@@ -33,6 +34,6 @@ public record Fase(
     }
 
     public Fase comId(Integer novoId) {
-        return new Fase(novoId, editalId, nome, descricao, ordem, dataAbertura, dataFechamento);
+        return new Fase(novoId, editalId, nome, descricao, ordem, clausulaBarreira, dataAbertura, dataFechamento);
     }
 }

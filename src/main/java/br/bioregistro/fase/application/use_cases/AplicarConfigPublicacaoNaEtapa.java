@@ -19,14 +19,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Preenche períodos de visualização (e recurso) dos espaços ainda vazios da etapa a partir da
- * configuração efetiva do edital e das datas da etapa âncora (spec 006, RN19–RN22).
- * Não altera espaços já publicados nem os que já têm {@code visualizacaoInicio}.
+ * Preenche períodos de visualização (e recurso) dos espaços da etapa a partir da configuração
+ * efetiva do edital e das datas da etapa âncora (spec 006 / RN07 / RN10).
+ * Espaços já publicados não são alterados; demais são recalculados quando a âncora muda.
  */
 @ApplicationScoped
 public class AplicarConfigPublicacaoNaEtapa {
 
-    /** Duração padrão do recurso quando o tipo abre recurso e a config não define outro prazo. */
+    /** Fallback se tipo e etapa não definirem duração (comportamento histórico). */
     private static final int DIAS_RECURSO_PADRAO = 2;
 
     private final PublicacaoRepository publicacoes;
@@ -57,13 +57,13 @@ public class AplicarConfigPublicacaoNaEtapa {
         int editalId = fase.get().editalId();
         List<Etapa> daFase = etapas.listarPorFase(instituicao, etapa.faseId());
         for (Publicacao espaco : publicacoes.listarPorEtapa(instituicao, etapa.id())) {
-            preencherSeVazio(instituicao, editalId, etapa, daFase, espaco);
+            aplicar(instituicao, editalId, etapa, daFase, espaco);
         }
     }
 
-    private void preencherSeVazio(Instituicao instituicao, int editalId, Etapa etapaDona,
-                                  List<Etapa> daFase, Publicacao espaco) {
-        if (espaco.publicada() || espaco.visualizacaoInicio() != null) {
+    private void aplicar(Instituicao instituicao, int editalId, Etapa etapaDona,
+                         List<Etapa> daFase, Publicacao espaco) {
+        if (espaco.publicada()) {
             return;
         }
         if (espaco.tipo() == null || espaco.tipo().id() == null) {
@@ -86,10 +86,21 @@ public class AplicarConfigPublicacaoNaEtapa {
         OffsetDateTime recursoInicio = null;
         OffsetDateTime recursoFim = null;
         if (espaco.tipo().abreRecurso()) {
+            int diasRecurso = diasRecurso(instituicao, etapaDona);
             recursoInicio = inicio;
-            recursoFim = PublicacoesDoCronograma.fimDoDia(saida.plusDays(DIAS_RECURSO_PADRAO - 1L));
+            recursoFim = PublicacoesDoCronograma.fimDoDia(saida.plusDays(diasRecurso - 1L));
         }
         publicacoes.salvar(instituicao, espaco.comDatas(inicio, inicio, fim, recursoInicio, recursoFim));
+    }
+
+    private int diasRecurso(Instituicao instituicao, Etapa etapa) {
+        if (etapa.diasRecurso() != null) {
+            return etapa.diasRecurso();
+        }
+        return tipos.tipoEtapa(instituicao, etapa.tipoId())
+                .map(TipoEtapa::diasRecursoPadrao)
+                .filter(d -> d != null && d >= 1)
+                .orElse(DIAS_RECURSO_PADRAO);
     }
 
     private LocalDate ancora(Instituicao instituicao, ConfiguracaoDePublicacao config, Etapa etapaDona,

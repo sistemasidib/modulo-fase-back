@@ -12,10 +12,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
 /**
- * Exclui a fase, seus espaços de publicação vazios, seus critérios de desempate e os vínculos com os
- * grupos e com o cronograma. Se ela ainda tiver etapas ou candidatos vinculados, o banco recusa e o
- * repositório lança {@code ConflitoException} (a transação desfaz tudo). A fase criada pelo
- * cronograma só sai depois que o módulo dela é desligado lá (senão a ponte a criaria de novo).
+ * Exclui a fase, seus espaços de publicação vazios, os critérios de desempate das suas etapas e os
+ * vínculos com os grupos e com o cronograma. Se ela ainda tiver etapas ou candidatos vinculados, o
+ * banco recusa e o repositório lança {@code ConflitoException} (a transação desfaz tudo). A fase
+ * criada pelo cronograma só sai depois que o módulo dela é desligado lá (senão a ponte a criaria de
+ * novo).
  */
 @ApplicationScoped
 public class ExcluirFase {

@@ -2,7 +2,7 @@ package br.bioregistro.fase.domain.model;
 
 import br.bioregistro.fase.domain.exception.RegraDeNegocioException;
 
-/** Grupo de cargos do edital que compartilha a mesma estrutura de fases e etapas. */
+/** Grupo de cargos do edital; cada grupo tem sua própria estrutura de fases e etapas (RN03). */
 public record GrupoCargo(Integer id, Integer editalId, String nome) {
 
     public static final int NOME_MAX = 150;

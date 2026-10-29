@@ -14,21 +14,21 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Persiste critérios de desempate. Aceita o schema novo ({@code db/027}) e o legado
- * ({@code criterio}/{@code regra}/…) até a migration rodar nos bancos.
+ * Persiste critérios de desempate por etapa ({@code db/030}). Aceita o schema novo ({@code db/027})
+ * e o legado ({@code criterio}/{@code regra}/…) até a migration de colunas rodar nos bancos.
  */
 @ApplicationScoped
 public class CriterioDesempateRepositoryAdapter implements CriterioDesempateRepository {
 
     private static final String SELECT_NOVO = """
-            SELECT id, fase_id, ordem, label, tipo, direcao,
+            SELECT id, etapa_id, ordem, label, tipo, direcao,
                    condicao_operador, condicao_valor, condicao_unidade,
                    data_referencia, fonte, base_legal
             FROM dbo.criterio_desempate
             """;
 
     private static final String SELECT_LEGADO = """
-            SELECT id, fase_id, ordem, criterio, tipo, regra, referencia,
+            SELECT id, etapa_id, ordem, criterio, tipo, regra, referencia,
                    fase_aplicacao, fundamentacao, observacao
             FROM dbo.criterio_desempate
             """;
@@ -41,13 +41,28 @@ public class CriterioDesempateRepositoryAdapter implements CriterioDesempateRepo
     }
 
     @Override
-    public List<CriterioDesempate> daFase(Instituicao instituicao, int faseId) {
+    public List<CriterioDesempate> daEtapa(Instituicao instituicao, int etapaId) {
         if (usaSchemaNovo(instituicao)) {
-            return sql.linhas(instituicao, SELECT_NOVO + " WHERE fase_id = ?1 ORDER BY ordem, id", faseId).stream()
+            return sql.linhas(instituicao, SELECT_NOVO + " WHERE etapa_id = ?1 ORDER BY ordem, id", etapaId).stream()
                     .map(CriterioDesempateRepositoryAdapter::deNovo)
                     .toList();
         }
-        return sql.linhas(instituicao, SELECT_LEGADO + " WHERE fase_id = ?1 ORDER BY ordem, id", faseId).stream()
+        return sql.linhas(instituicao, SELECT_LEGADO + " WHERE etapa_id = ?1 ORDER BY ordem, id", etapaId).stream()
+                .map(CriterioDesempateRepositoryAdapter::deLegado)
+                .toList();
+    }
+
+    @Override
+    public List<CriterioDesempate> daFase(Instituicao instituicao, int faseId) {
+        String filtro = """
+                 WHERE etapa_id IN (SELECT id FROM dbo.etapa WHERE fases_id = ?1)
+                 ORDER BY etapa_id, ordem, id""";
+        if (usaSchemaNovo(instituicao)) {
+            return sql.linhas(instituicao, SELECT_NOVO + filtro, faseId).stream()
+                    .map(CriterioDesempateRepositoryAdapter::deNovo)
+                    .toList();
+        }
+        return sql.linhas(instituicao, SELECT_LEGADO + filtro, faseId).stream()
                 .map(CriterioDesempateRepositoryAdapter::deLegado)
                 .toList();
     }
@@ -75,8 +90,15 @@ public class CriterioDesempateRepositoryAdapter implements CriterioDesempateRepo
     }
 
     @Override
+    public void excluirDaEtapa(Instituicao instituicao, int etapaId) {
+        sql.executar(instituicao, "DELETE FROM dbo.criterio_desempate WHERE etapa_id = ?1", etapaId);
+    }
+
+    @Override
     public void excluirDaFase(Instituicao instituicao, int faseId) {
-        sql.executar(instituicao, "DELETE FROM dbo.criterio_desempate WHERE fase_id = ?1", faseId);
+        sql.executar(instituicao, """
+                DELETE FROM dbo.criterio_desempate
+                WHERE etapa_id IN (SELECT id FROM dbo.etapa WHERE fases_id = ?1)""", faseId);
     }
 
     private boolean usaSchemaNovo(Instituicao instituicao) {
@@ -94,13 +116,13 @@ public class CriterioDesempateRepositoryAdapter implements CriterioDesempateRepo
         if (c.id() == null) {
             Object id = sql.valor(instituicao, """
                     INSERT INTO dbo.criterio_desempate
-                        (fase_id, ordem, label, tipo, direcao,
+                        (etapa_id, ordem, label, tipo, direcao,
                          condicao_operador, condicao_valor, condicao_unidade,
                          data_referencia, fonte, base_legal, created_at, updated_at)
                     OUTPUT INSERTED.id
                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11,
                             SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())""",
-                    c.faseId(), c.ordem(), c.label(), c.tipo().name(), c.direcao().name(),
+                    c.etapaId(), c.ordem(), c.label(), c.tipo().name(), c.direcao().name(),
                     Sql.texto(operador), Sql.texto(valor), Sql.texto(unidade),
                     Sql.texto(c.dataReferencia()), Sql.texto(c.fonte()), Sql.texto(c.baseLegal()));
             return c.comId(Sql.comoInteiro(id));
@@ -131,12 +153,12 @@ public class CriterioDesempateRepositoryAdapter implements CriterioDesempateRepo
         if (c.id() == null) {
             Object id = sql.valor(instituicao, """
                     INSERT INTO dbo.criterio_desempate
-                        (fase_id, ordem, criterio, tipo, regra, referencia, fase_aplicacao,
+                        (etapa_id, ordem, criterio, tipo, regra, referencia, fase_aplicacao,
                          fundamentacao, observacao, created_at, updated_at)
                     OUTPUT INSERTED.id
                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'RESULTADO_FINAL', ?7, ?8,
                             SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET())""",
-                    c.faseId(), c.ordem(), c.label(), tipoLegado, regra,
+                    c.etapaId(), c.ordem(), c.label(), tipoLegado, regra,
                     Sql.texto(referencia), Sql.texto(fundamentacao), Sql.texto(observacao));
             return c.comId(Sql.comoInteiro(id));
         }

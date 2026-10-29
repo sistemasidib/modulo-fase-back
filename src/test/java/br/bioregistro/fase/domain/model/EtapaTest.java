@@ -16,7 +16,7 @@ class EtapaTest {
                        OffsetDateTime abertura, OffsetDateTime fechamento, Integer elegibilidadeEtapaId) {
         return new Etapa(id, faseId, nome, tipoId, null, abertura, fechamento, null,
                 false, false, false, false, null, null, elegibilidadeEtapaId, null, null, null,
-                null, null, null);
+                null, null, null, null);
     }
 
     @Test
@@ -53,13 +53,13 @@ class EtapaTest {
     void recusaNotaMinimaInvalida() {
         assertThrows(RegraDeNegocioException.class,
                 () -> new Etapa(null, 1, "Discursiva", 4, null, null, null, null, false, false, false, false,
-                        null, null, null, null, null, null, true, BigDecimal.ZERO, null));
+                        null, null, null, null, null, null, true, BigDecimal.ZERO, null, null));
         assertThrows(RegraDeNegocioException.class,
                 () -> new Etapa(null, 1, "Discursiva", 4, null, null, null, null, false, false, false, false,
-                        null, null, null, null, null, null, true, new BigDecimal("100.5"), null));
+                        null, null, null, null, null, null, true, new BigDecimal("100.5"), null, null));
         assertThrows(RegraDeNegocioException.class,
                 () -> new Etapa(null, 1, "Discursiva", 4, null, null, null, null, false, false, false, false,
-                        null, null, null, null, null, null, true, new BigDecimal("33.333"), null));
+                        null, null, null, null, null, null, true, new BigDecimal("33.333"), null, null));
     }
 
     @Test

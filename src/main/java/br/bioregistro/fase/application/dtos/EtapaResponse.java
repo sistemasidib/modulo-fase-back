@@ -28,6 +28,7 @@ public record EtapaResponse(
         Boolean notaZeroElimina,
         BigDecimal notaMinimaPercentual,
         String modalidade,
+        Integer diasRecurso,
         BigDecimal pontuacaoMaxima,
         BigDecimal notaMinimaEmPontos,
         String aviso
@@ -49,6 +50,7 @@ public record EtapaResponse(
                 e.elegibilidadeStatusId(), e.responsavelId(), e.publicadaEm(), e.notaZeroElimina(),
                 e.notaMinimaPercentual(),
                 e.modalidade() == null ? null : e.modalidade().canonica().name(),
+                e.diasRecurso(),
                 pontuacaoMaxima, minima, aviso);
     }
 }

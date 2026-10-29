@@ -34,6 +34,10 @@ class Cenario {
     final VinculosEmMemoria vinculos = new VinculosEmMemoria(cronogramas, publicacoes);
     final ConfigsPublicacaoEmMemoria configsPublicacao = new ConfigsPublicacaoEmMemoria();
 
+    {
+        criterios.comEtapas(etapas);
+    }
+
     Cenario comEdital(Instituicao instituicao, int editalId) {
         fases.comEdital(instituicao, editalId);
         return this;
@@ -60,7 +64,7 @@ class Cenario {
     }
 
     ExcluirEtapa excluirEtapa() {
-        return new ExcluirEtapa(etapas, espacos, disciplinas, criteriosCorrecao, resultadoFinal);
+        return new ExcluirEtapa(etapas, espacos, disciplinas, criteriosCorrecao, criterios, resultadoFinal);
     }
 
     CriteriosDeCorrecao criteriosDeCorrecao() {
@@ -93,12 +97,12 @@ class Cenario {
     }
 
     static FaseRequest fase(String nome, int ordem) {
-        return new FaseRequest(nome, null, (short) ordem, ABERTURA, FECHAMENTO);
+        return new FaseRequest(nome, null, (short) ordem, false, ABERTURA, FECHAMENTO);
     }
 
     static EtapaRequest etapa(String nome, int tipoId, Integer elegibilidadeEtapaId) {
         return new EtapaRequest(nome, tipoId, null, null, null, null, null, null, null, null, null, null,
                 elegibilidadeEtapaId, elegibilidadeEtapaId == null ? null : APROVADO, null, null,
-                null, null, null);
+                null, null, null, null);
     }
 }

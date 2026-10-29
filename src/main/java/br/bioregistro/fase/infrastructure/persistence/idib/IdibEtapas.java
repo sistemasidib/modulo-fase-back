@@ -53,6 +53,7 @@ public class IdibEtapas {
         entidade.notaZeroElimina = etapa.notaZeroElimina();
         entidade.notaMinimaPercentual = etapa.notaMinimaPercentual();
         entidade.modalidade = etapa.modalidade() == null ? null : etapa.modalidade().canonica().name();
+        entidade.diasRecurso = etapa.diasRecurso();
         entidade.updatedAt = agora;
         entidade.persist();
         RestricaoDoBanco.flush(() -> Etapa.flush(), "A etapa viola uma restrição do banco (tipo ou status inexistente?).");
@@ -71,6 +72,7 @@ public class IdibEtapas {
                 Boolean.TRUE.equals(e.reprovavel), Boolean.TRUE.equals(e.obrigatoriaParaFase),
                 Boolean.TRUE.equals(e.todosCandidatos), Boolean.TRUE.equals(e.aceitaDocumentos),
                 e.aceitaRecurso, e.preliminar, e.elegibilidadeEtapaId, e.elegibilidadeStatusId, e.responsavelId,
-                e.publicadaEm, e.notaZeroElimina, e.notaMinimaPercentual, Modalidade.de(e.modalidade));
+                e.publicadaEm, e.notaZeroElimina, e.notaMinimaPercentual, Modalidade.de(e.modalidade),
+                e.diasRecurso);
     }
 }

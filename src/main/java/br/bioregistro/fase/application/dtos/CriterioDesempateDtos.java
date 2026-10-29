@@ -22,15 +22,15 @@ public final class CriterioDesempateDtos {
             String baseLegal
     ) {}
 
-    /** Todos os critérios da fase, do 1º ao último. */
+    /** Todos os critérios da etapa, do 1º ao último. */
     public record OrdemRequest(List<Integer> ids) {}
 
-    /** Fases que recebem uma cópia dos critérios (os delas são substituídos). */
-    public record CopiarRequest(List<Integer> faseIds) {}
+    /** Etapas que recebem uma cópia dos critérios (os delas são substituídos). */
+    public record CopiarRequest(List<Integer> etapaIds) {}
 
     public record CriterioDesempateResponse(
             int id,
-            int faseId,
+            int etapaId,
             int ordem,
             String label,
             Tipo tipo,
@@ -42,7 +42,7 @@ public final class CriterioDesempateDtos {
     ) {
         public static CriterioDesempateResponse de(CriterioDesempate c) {
             return new CriterioDesempateResponse(
-                    c.id(), c.faseId(), c.ordem(), c.label(), c.tipo(), c.direcao(),
+                    c.id(), c.etapaId(), c.ordem(), c.label(), c.tipo(), c.direcao(),
                     c.condicao(), c.dataReferencia(), c.fonte(), c.baseLegal());
         }
     }

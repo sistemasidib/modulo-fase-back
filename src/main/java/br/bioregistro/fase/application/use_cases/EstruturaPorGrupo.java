@@ -22,8 +22,8 @@ import java.util.Map;
 
 /**
  * Monta a estrutura do edital por grupo (spec 006, RN01–RN03): fases na ordem do edital,
- * desempate no fim do grupo. O desempate continua guardado na fase (P-01); aqui só se agrega
- * a leitura — critérios das fases do grupo, sem repetir o mesmo id.
+ * desempate no fim do grupo. Cada etapa tem a própria lista; aqui só se agrega a leitura —
+ * critérios das etapas das fases do grupo, sem repetir o mesmo id.
  */
 @ApplicationScoped
 public class EstruturaPorGrupo {

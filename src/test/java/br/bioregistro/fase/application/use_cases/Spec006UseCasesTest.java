@@ -74,7 +74,7 @@ class Spec006UseCasesTest {
                 new BigDecimal("20")));
         EtapaResponse atualizada = c.atualizarEtapa().executar(IDECAN, etapaId,
                 new EtapaRequest("Discursiva", PROVA_DISCURSIVA, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, true, new BigDecimal("40"), null));
+                        null, null, null, null, null, null, true, new BigDecimal("40"), null, null));
         assertEquals(0, new BigDecimal("50").compareTo(atualizada.pontuacaoMaxima()));
         assertEquals(0, new BigDecimal("20.00").compareTo(atualizada.notaMinimaEmPontos()));
     }
@@ -84,7 +84,7 @@ class Spec006UseCasesTest {
         int faseId = c.criarFase().executar(IDECAN, 10, Cenario.fase("S05", 1)).id();
         EtapaResponse hetero = c.criarEtapa().executar(IDECAN, faseId,
                 new EtapaRequest("Hetero", HETEROIDENTIFICACAO, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, "ONLINE"));
+                        null, null, null, null, null, null, null, null, "ONLINE", null));
         EtapaResponse biopsico = c.criarEtapa().executar(IDECAN, faseId,
                 etapa("Biopsico", BIOPSICOSSOCIAL, null));
         assertEquals(Modalidade.REMOTA.name(), hetero.modalidade());
@@ -108,7 +108,7 @@ class Spec006UseCasesTest {
 
         EtapaResponse atualizada = c.atualizarEtapa().executar(IDECAN, hetero.id(),
                 new EtapaRequest("Hetero", HETEROIDENTIFICACAO, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, "ONLINE"));
+                        null, null, null, null, null, null, null, null, "ONLINE", null));
         assertTrue(atualizada.aviso() != null && !atualizada.aviso().isBlank());
         assertTrue(c.publicacoes.listarPorEtapa(IDECAN, hetero.id()).stream()
                 .anyMatch(p -> TipoPublicacao.LOCAL_PROVA.equals(p.tipo().valor())));
@@ -155,7 +155,7 @@ class Spec006UseCasesTest {
         EtapaResponse criada = c.criarEtapa().executar(IDECAN, faseId,
                 new EtapaRequest("Obj", PROVA_OBJETIVA, null,
                         OffsetDateTime.parse("2026-11-10T08:00:00-03:00"), fimProva,
-                        null, null, null, null, null, null, null, null, null, null, null, null, null, null));
+                        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null));
 
         Publicacao gabarito = c.publicacoes.listarPorEtapa(IDECAN, criada.id()).stream()
                 .filter(p -> "gabarito_preliminar".equals(p.tipo().valor())).findFirst().orElseThrow();
@@ -174,7 +174,7 @@ class Spec006UseCasesTest {
     }
 
     @Test
-    void espacoJaPreenchidoNaoESobrescritoPelaConfig() {
+    void mudarAncoraRecalculaEspacoNaoPublicado() {
         c.configsPublicacao.comPadrao(new ConfiguracaoDePublicacao(GABARITO_PRELIMINAR.id(), "prova_objetiva", 1, 3,
                 FormatoDePublicacao.LISTA_PDF));
         int faseId = c.criarFase().executar(IDECAN, 10, Cenario.fase("Obj", 1)).id();
@@ -190,11 +190,12 @@ class Spec006UseCasesTest {
                 new EtapaRequest("Obj", PROVA_OBJETIVA, null,
                         OffsetDateTime.parse("2026-11-10T08:00:00-03:00"),
                         OffsetDateTime.parse("2026-11-10T23:59:00-03:00"),
-                        null, null, null, null, null, null, null, null, null, null, null, null, null, null));
+                        null, null, null, null, null, null, null, null, null, null, null, null, null, null, null));
 
         Publicacao apos = c.publicacoes.listarPorEtapa(IDECAN, criada.id()).stream()
                 .filter(p -> "gabarito_preliminar".equals(p.tipo().valor())).findFirst().orElseThrow();
-        assertEquals(LocalDate.of(2026, 12, 1), apos.visualizacaoInicio().toLocalDate());
+        // D+1 a partir de 10/11 → 11/11 (não preserva override manual se não publicado)
+        assertEquals(LocalDate.of(2026, 11, 11), apos.visualizacaoInicio().toLocalDate());
     }
 
     @Test

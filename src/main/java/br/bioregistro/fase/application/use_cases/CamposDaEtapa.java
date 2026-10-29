@@ -59,6 +59,6 @@ final class CamposDaEtapa {
                 etapa.obrigatoriaParaFase(), etapa.todosCandidatos(), etapa.aceitaDocumentos(),
                 etapa.aceitaRecurso(), etapa.preliminar(), etapa.elegibilidadeEtapaId(),
                 etapa.elegibilidadeStatusId(), etapa.responsavelId(), etapa.publicadaEm(),
-                zero, minima, modalidade);
+                zero, minima, modalidade, etapa.diasRecurso());
     }
 }

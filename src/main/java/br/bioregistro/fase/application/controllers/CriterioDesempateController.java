@@ -19,7 +19,7 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 
-/** Critérios de desempate de uma fase (de um grupo). */
+/** Critérios de desempate de uma etapa. */
 @Path("/v1/{instituicao}")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -32,32 +32,32 @@ public class CriterioDesempateController {
     }
 
     @GET
-    @Path("/fases/{faseId}/criterios-desempate")
+    @Path("/etapas/{etapaId}/criterios-desempate")
     public List<CriterioDesempateResponse> listar(@PathParam("instituicao") Instituicao instituicao,
-                                                  @PathParam("faseId") int faseId) {
-        return criterios.listar(instituicao, faseId);
+                                                  @PathParam("etapaId") int etapaId) {
+        return criterios.listar(instituicao, etapaId);
     }
 
     @POST
-    @Path("/fases/{faseId}/criterios-desempate")
-    public Response criar(@PathParam("instituicao") Instituicao instituicao, @PathParam("faseId") int faseId,
+    @Path("/etapas/{etapaId}/criterios-desempate")
+    public Response criar(@PathParam("instituicao") Instituicao instituicao, @PathParam("etapaId") int etapaId,
                           CriterioDesempateRequest request) {
-        CriterioDesempateResponse criado = criterios.criar(instituicao, faseId, Parametros.corpo(request));
+        CriterioDesempateResponse criado = criterios.criar(instituicao, etapaId, Parametros.corpo(request));
         return Response.status(Response.Status.CREATED).entity(criado).build();
     }
 
     @PUT
-    @Path("/fases/{faseId}/criterios-desempate/ordem")
+    @Path("/etapas/{etapaId}/criterios-desempate/ordem")
     public List<CriterioDesempateResponse> reordenar(@PathParam("instituicao") Instituicao instituicao,
-                                                     @PathParam("faseId") int faseId, OrdemRequest request) {
-        return criterios.reordenar(instituicao, faseId, Parametros.corpo(request).ids());
+                                                     @PathParam("etapaId") int etapaId, OrdemRequest request) {
+        return criterios.reordenar(instituicao, etapaId, Parametros.corpo(request).ids());
     }
 
     @POST
-    @Path("/fases/{faseId}/criterios-desempate/copiar")
-    public Response copiar(@PathParam("instituicao") Instituicao instituicao, @PathParam("faseId") int faseId,
+    @Path("/etapas/{etapaId}/criterios-desempate/copiar")
+    public Response copiar(@PathParam("instituicao") Instituicao instituicao, @PathParam("etapaId") int etapaId,
                            CopiarRequest request) {
-        criterios.copiar(instituicao, faseId, Parametros.corpo(request).faseIds());
+        criterios.copiar(instituicao, etapaId, Parametros.corpo(request).etapaIds());
         return Response.noContent().build();
     }
 
